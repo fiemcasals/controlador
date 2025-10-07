@@ -1,0 +1,106 @@
+/* Vars de barra superior (usan las mismas que el resto del sitio) */
+:root{
+  --header-h: 56px;
+  --nav-h: 44px;
+  --topbar: calc(var(--header-h) + var(--nav-h));
+}
+
+/* Asegura que el contenido arranque debajo de la barra */
+body{ padding-top: var(--topbar); }
+
+/* Esta vista ocupa toda la pantalla útil */
+main{
+  max-width: none;       /* ancho completo para un hero centrado */
+  margin: 0;
+  padding: 0;
+}
+
+.home-page{
+  min-height: calc(100vh - var(--topbar));
+  background: #000;
+  display: grid;
+  place-items: center;   /* centra todo */
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* Tarjeta central */
+.home-card{
+  width: min(100%, 980px);
+  border: 1px solid #333;
+  border-radius: 16px;
+  background: #0b0b0b;
+  box-shadow: 0 10px 40px rgba(0,0,0,.45);
+  padding: 28px clamp(20px, 4vw, 40px);
+  text-align: center;
+  color: #eee;
+}
+
+/* Título principal */
+.home-card h1{
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-weight: 800;
+  font-size: clamp(18px, 3.2vw, 34px);
+  line-height: 1.15;
+  color: #fff;
+}
+
+/* Subtítulo */
+.subtitle{
+  margin: 6px 0 18px 0;
+  color: #cfcfcf;
+  font-size: clamp(14px, 1.6vw, 18px);
+}
+
+/* Botones */
+.cta{
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 10px 0 6px 0;
+}
+
+.btn{
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid #3a3a3a;
+  background: #181818;
+  color: #e8e8e8;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform .08s ease, background .18s ease, border-color .18s ease;
+}
+.btn:hover{ transform: translateY(-1px); border-color:#555; background:#1f1f1f; }
+
+.btn.primary{
+  background: #00ff73;
+  color: #08180f;
+  border-color: #00ff73;
+}
+.btn.primary:hover{ filter: brightness(.95); }
+
+/* Nota pequeña */
+.small{ font-size: .9rem; }
+.muted{ color: #b8b8b8; }
+
+/* Responsive fino */
+@media (max-width: 640px){
+  .home-card{ border-radius: 12px; }
+  .btn{ width: 100%; text-align: center; }
+}
+
+/* Botón rojo (login) */
+.btn.danger{
+  background: #ff3b3b;
+  color: #1a0a0a;
+  border-color: #ff3b3b;
+}
+.btn.danger:hover{
+  filter: brightness(.95);
+}
+/* Garantiza que Home herede el fondo negro y no agregue márgenes */
+html, body { margin: 0; padding: 0; background: #000; }

@@ -1,0 +1,37 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'core/css/auth.css' %}">
+
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Ingresar</h1>
+    <p class="subtitle">Accedé al panel del VAE.</p>
+
+    {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if redirect_field_value %}
+        <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}">
+      {% endif %}
+
+      <div class="field">
+        <label for="{{ form.username.id_for_label }}">Usuario</label>
+        {{ form.username }}
+      </div>
+
+      <div class="field">
+        <label for="{{ form.password.id_for_label }}">Contraseña</label>
+        {{ form.password }}
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn danger">Ingresar</button>
+        <!--<a class="btn ghost" href="/registrarse/">Registrarse</a>-->
+        <a class="btn" href="/">Volver</a>
+      </div>
+    </form>
+  </div>
+</section>

@@ -1,0 +1,22 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/mix.css' %}">
+
+<div class="mix-page">
+  <div class="mix-grid">
+    <!-- Panel izquierdo: Cámara -->
+    <section class="mix-panel mix-panel--cam">
+      <div class="video-box">
+        <img src="/video_feed/" alt="Video en vivo">
+      </div>
+    </section>
+
+    <!-- Panel derecho: Joystick -->
+    <section class="mix-panel mix-panel--joy">
+      <iframe src="/static/core/joystick.html" title="Joystick"></iframe>
+    </section>
+  </div>
+</div>
+{% endblock %}

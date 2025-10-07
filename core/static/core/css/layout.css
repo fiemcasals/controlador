@@ -1,0 +1,25 @@
+/* layout.css — estilos básicos del layout principal */
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Helvetica, Arial, sans-serif;
+}
+
+header, nav, main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+nav a {
+  
+  margin-right: 12px;
+}
+
+.guard {
+  padding: 8px 10px;
+  background: #222;
+  color: #eee;
+  border-radius: 8px;
+}
+
+

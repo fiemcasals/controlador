@@ -1,0 +1,41 @@
+
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/auth.css' %}">
+
+<section class="auth-page">
+  <div class="auth-card">
+    <h1>Registrarse</h1>
+    <p class="subtitle">Creá tu cuenta para usar la Cámara, el Controlador y el Modo Mixto.</p>
+
+    {% if form.non_field_errors %}
+      <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {# Render genérico y prolijo de todos los campos del form (UserCreationForm + email si lo agregaste) #}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}
+            <small class="help">{{ field.help_text|safe }}</small>
+          {% endif %}
+          {% if field.errors %}
+            <div class="err">{{ field.errors|striptags }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <div class="actions">
+        <button type="submit" class="btn primary">Crear cuenta</button>
+        <a class="btn" href="/accounts/login/">Ya tengo cuenta</a>
+        <a class="btn ghost" href="/">Volver</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<!-- Agregamos el link al CSS específico de esta vista -->
+<link rel="stylesheet" href="{% static 'core/css/camara.css' %}">
+
+<div class="camara-page">
+  
+  <div class="video-container">
+    <img src="/video_feed/" alt="Video en vivo" />
+  </div>
+</div>
+{% endblock %}

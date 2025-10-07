@@ -1,0 +1,28 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'core/css/home.css' %}">
+
+<section class="home-page">
+  <div class="home-card">
+    <h1>COMANDO CENTRAL DEL VEHÍCULO DE EXPLORACIÓN AUTÓNOMO</h1>
+    <p class="subtitle">
+      Monitoreá la cámara, controlá el vehículo y probá el modo mixto desde este panel.
+    </p>
+
+    {% if user.is_authenticated %}
+      <div class="cta">
+        <a class="btn primary" href="/camara/">Ver Cámara</a>
+        <a class="btn" href="/controlador/">Abrir Controlador</a>
+        <a class="btn" href="/mix/">Modo Mixto</a>
+        <a class="btn" href="/accounts/logout/">Cerrar sesión</a>
+        {% if user.is_staff %}<a class="btn" href="/admin/">Admin</a>{% endif %}
+      </div>
+    {% else %}
+      <div class="cta">
+        <a class="btn danger" href="/accounts/login/?next=/">Ingresar</a>
+        <!--<a class="btn" href="/registrarse/">Registrarse</a>-->
+      </div>
+    {% endif %}
+  </div>
+</section>
+

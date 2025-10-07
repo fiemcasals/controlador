@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VAE Control</title>
+
+  <!-- CSS global -->
+  <link rel="stylesheet" href="/static/core/css/styles.css">
+
+  <!-- CSS específico del layout -->
+  <link rel="stylesheet" href="/static/core/css/layout.css">
+</head>
+<body>
+
+<nav>              
+    {% if user.is_authenticated %}
+  <a href="/accounts/logout/">Cerrar sesión</a>
+    {% else %}
+  <a href="/accounts/login/">Ingresar</a> · <a href="/registrarse/">Registrarse</a>
+    {% endif %}
+  <a href="/">Inicio</a>
+  <a href="/camara/">Cámara</a>
+  <a href="/controlador/">Controlador</a>
+  <a href="/mix/">Mixto</a>
+  {% if user.is_staff %}<a href="/admin/">Admin</a>{% endif %}
+</nav>
+<main>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

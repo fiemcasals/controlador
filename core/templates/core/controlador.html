@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/controlador.css' %}">
+
+<div class="controlador-page">
+    <div class="joystick-box">
+    <iframe src="/static/core/joystick.html" title="Joystick"></iframe>
+  </div>
+
+  <p class="info">
+    El WebSocket se conecta a <code>ws://&lt;host&gt;/ws</code>.<br>
+    Al cargar, el servidor envía <code>{"encendido": true}</code>.
+  </p>
+</div>
+{% endblock %}
