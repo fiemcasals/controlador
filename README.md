@@ -45,3 +45,6 @@ python manage.py makemigrations
 
 python manage.py migrate core
 python manage.py makemigration core
+
+## para correrlo
+daphne -b 127.0.0.1 -p 8000 vaesite.asgi:application
