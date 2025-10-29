@@ -2,16 +2,31 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'core/css/controlador.css' %}">
-
-<div class="controlador-page">
-    <div class="joystick-box">
-    <iframe src="/static/core/joystick.html" title="Joystick"></iframe>
+<div class="Control-Isquierdo">
+  <div class="joystick">
+    <div class="stick"></div>
   </div>
-
-  <p class="info">
-    El WebSocket se conecta a <code>ws://&lt;host&gt;/ws</code>.<br>
-    Al cargar, el servidor envía <code>{"encendido": true}</code>.
-  </p>
 </div>
+
+<div class="Botones_centro">
+  <div><button id="encendido">Apagado</button></div>
+</div>
+
+<div class="Control-Derecho">
+  <div style="width: 100px;">
+    <div id="barra">
+      <div class="slider-container">
+        <div class="slider" id="slider"></div>
+        <div class="value" id="value">0</div>
+      </div>
+    </div>
+  </div>
+  <div style="width:200px;margin-left:5px;display:flex;flex-direction:column-reverse;justify-content:space-between;height:300px;">
+    <button class="Botones_Aceleracion" id="B_baja">Baja</button>
+    <button class="Botones_Aceleracion" id="B_media">Media</button>
+    <button class="Botones_Aceleracion" id="B_alta">Alta</button>
+  </div>
+</div>
+
+<script src="{% static 'core/js/script.js' %}"></script>
 {% endblock %}

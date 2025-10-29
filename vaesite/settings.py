@@ -20,6 +20,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -49,6 +50,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'vaesite.wsgi.application'
 ASGI_APPLICATION = 'vaesite.asgi.application'
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -70,6 +72,17 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'core' / 'static']
+# Directorios donde buscar archivos estáticos durante el desarrollo
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'core', 'static'),
+]
+
+# Directorio donde se recopilan todos los archivos estáticos (para producción o pruebas locales)
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# En desarrollo, sirve también los archivos subidos por el usuario (si tenés media)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -79,7 +92,16 @@ CHANNEL_LAYERS = {
     }
 }
 
+
 # settings.py
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'       # o '/camara/' si preferís ir directo a la cámara
 LOGOUT_REDIRECT_URL = '/'      # al cerrar sesión, vuelve al inicio
+
+
+VEHICLE_WS_URL = "ws://192.168.1.21:8000/ws"
+VEHICLE_WS_CONNECT_TIMEOUT = 5
+
+# A DÓNDE enviar los comandos (la IP/PUERTO donde corre el monitor_udp.py)
+MONITOR_UDP_IP = "192.168.1.21"   # <-- poné la IP de la PC del monitor
+MONITOR_UDP_PORT = 9999           # <-- mismo puerto que usás al ejecutar el monitor

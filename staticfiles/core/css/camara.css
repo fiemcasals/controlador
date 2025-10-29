@@ -1,0 +1,66 @@
+/* ----- Barra superior fija ----- */
+header, nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #111;
+  color: #eee;
+  z-index: 1000;
+  padding: 10px 20px;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+nav {
+  top: 75px; /* justo debajo del header */
+  background: #222;
+  text-align: center;
+  padding: 8px 0;
+}
+
+nav a {
+  color: #eee;
+  margin: 0 10px;
+  text-decoration: none;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* ----- Contenido principal debajo de la barra ----- */
+main {
+  margin-top: 100px; /* separa el contenido del header+nav fijo */
+}
+
+/* ----- Página de cámara ----- */
+.camara-page {
+  text-align: center;
+  background: #000;
+  min-height: calc(100vh - 100px);
+}
+
+.camara-page h2 {
+  color: #eee;
+  margin: 10px 0;
+}
+
+.video-container {
+  width: 100%;
+  height: calc(100vh - 140px); /* ocupa casi toda la pantalla */
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+

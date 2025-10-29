@@ -1,0 +1,125 @@
+body {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  background-color: black;
+}
+
+/* ==== Título principal del panel ==== */
+header h1 {
+  text-align: center;        /* centra horizontalmente */
+  font-size: 1.6rem;         /* tamaño moderado */
+  font-weight: 600;          /* seminegrita */
+  color: #fff;               /* texto claro */
+  letter-spacing: 1px;       /* separación leve entre letras */
+  margin: 0;                 /* elimina márgenes por defecto */
+  padding: 6px 0;            /* un poco de aire vertical */
+}
+
+/* Si el fondo del header es oscuro, aseguremos contraste */
+header {
+  background: #111;          /* barra superior oscura */
+  border-bottom: 1px solid #333;
+}
+
+
+.joystick {
+  width: 300px;
+  height: 300px;
+  background-color: #ccc;
+  border-radius: 50%;
+  position: relative;
+}
+
+.stick {
+  width: 50px;
+  height: 50px;
+  background-color: #f00;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.Control-Isquierdo {
+  width: 50%;
+  margin-left: 15%;
+}
+
+/* configiracion de la barra     */
+
+.slider-container {
+  position: relative;
+  width: 30px;
+  height: 300px;
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.slider {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  background-color: #00ff73;
+  transition: height 0.3s;
+}
+.value {
+  position: absolute;
+  bottom: 0;
+  text-align: center;
+  width: 20px;
+  background-color: #00ff1a;
+  color: #fff;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.Control-Derecho {
+  display: flex;
+  width: 50%;
+  justify-content: center;
+  align-items: center;
+}
+
+#barra{
+  display: flex;
+  align-content: center;
+  justify-content: center;
+  width:50px ;
+}
+#encendido
+{
+  display: flex;
+  margin-top: 15px;
+  width: 80px;
+  color:black;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); 
+  background-color: rgb(254, 10, 10);
+}
+
+.Botones_centro
+{ 
+  
+  height: 100%;
+  
+  margin-top: 0px;
+  
+    
+}
+.Botones_Aceleracion
+{
+  width: 120px;
+  margin-left: 0px;
+  background-color: #f00;
+
+}
+
+
+
+/* extra layout tweaks for Django */
+
