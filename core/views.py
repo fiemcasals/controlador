@@ -48,7 +48,7 @@ def camara(request):
 
 @login_required
 def controlador(request):
-    return render(request, "core/controlador.html")
+    return render(request, "core/control_panel.html")
 
 @login_required
 def mix_view(request):
@@ -99,3 +99,17 @@ def generate_frames():
 @login_required
 def video_feed(request):
     return StreamingHttpResponse(generate_frames(), content_type="multipart/x-mixed-replace; boundary=frame")
+
+
+
+@login_required
+def monitor_view(request):
+    return render(request, "core/monitor.html")
+    
+ 
+
+
+@login_required
+def controlador_embed(request):
+    # versión sin navbar para iframes en /mix
+    return render(request, "core/controlador_embed.html")

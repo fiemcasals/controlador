@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+
+<div class="mix-root" style="height: 100vh; display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 12px; padding: 12px; align-items: stretch;">
+  <section class="mix-panel" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
+    {% include "core/direccion.html" %}
+  </section>
+
+  <section class="mix-panel" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
+    <!-- Aquí tu cámara o cualquier embed -->
+    <img src="{% url 'video_feed' %}" alt="Video en vivo" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">
+  </section>
+
+  <section class="mix-panel" style="display:flex; align-items:center; justify-content:center; overflow:hidden;">
+    {% include "core/velocidad.html" %}
+  </section>
+</div>
+
+<!-- (Opcional) Escuchar eventos combinados para enviar comandos al backend -->
+<script type="module">
+  let last = { angle: 0, magnitude: 0, speed: 0, isOn: false };
+
+  document.addEventListener('direction:change', (e) => {
+    last.angle = e.detail.angle;
+    last.magnitude = e.detail.magnitude;
+    maybeSend();
+  });
+
+  document.addEventListener('speed:change', (e) => {
+    last.speed = e.detail.speed;
+    last.isOn = e.detail.isOn;
+    maybeSend();
+  });
+
+  // Reemplaza este fetch por tu WebSocket o endpoint real
+  let sendTimeout;
+  function maybeSend() {
+    clearTimeout(sendTimeout);
+    sendTimeout = setTimeout(() => {
+      // Ejemplo: POST a /api/robot/control
+      // fetch("/api/robot/control", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(last)
+      // });
+      // console.log("Comando", last);
+    }, 50); // debounced
+  }
+</script>
+{% endblock %}

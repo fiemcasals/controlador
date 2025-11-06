@@ -7,6 +7,14 @@ SECRET_KEY = 'dev-secret-for-vae-demo'  # Cambiar en producción
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    'http://192.168.4.2:8000',  # poné la IP de tu PC si hace falta CSRF para views
+    # agregá otras si corresponde
+    'http://localhost:8000',     # por si probás local
+    'http://127.0.0.1:8000',
+    
+]
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -88,9 +96,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
     }
 }
+
 
 
 # settings.py
@@ -99,9 +109,30 @@ LOGIN_REDIRECT_URL = '/'       # o '/camara/' si preferís ir directo a la cáma
 LOGOUT_REDIRECT_URL = '/'      # al cerrar sesión, vuelve al inicio
 
 
-VEHICLE_WS_URL = "ws://192.168.1.21:8000/ws"
+VEHICLE_WS_URL = "ws://192.168.4.1:80/ws"
+#O si tu firmware escucha WebSocket en / sin ruta extra: VEHICLE_WS_URL = "ws://192.168.4.1:80"
 VEHICLE_WS_CONNECT_TIMEOUT = 5
 
 # A DÓNDE enviar los comandos (la IP/PUERTO donde corre el monitor_udp.py)
-MONITOR_UDP_IP = "192.168.1.21"   # <-- poné la IP de la PC del monitor
+MONITOR_UDP_IP = "192.168.4.4"   # <-- poné la IP de la PC del monitor
 MONITOR_UDP_PORT = 9999           # <-- mismo puerto que usás al ejecutar el monitor
+
+#MONITOR_UDP_IP = "192.168.1.21"   # <-- poné la IP de la PC del monitor
+#MONITOR_UDP_PORT = 9999           # <-- mismo puerto que usás al ejecutar el monitor
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "loggers": {
+        "joystick": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+    },
+}
+
+# Permite iframes SOLO desde el mismo origen (misma IP/host y puerto)
+X_FRAME_OPTIONS = 'SAMEORIGIN'

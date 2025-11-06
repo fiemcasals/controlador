@@ -11,4 +11,7 @@ urlpatterns = [
     path('video_feed/', core_views.video_feed, name='video_feed'),
     path('controlador/', core_views.controlador, name='controlador'),
     path('mix/', core_views.mix_view, name='mix'),
+    path('monitor/', core_views.monitor_view, name='monitor'),
+    path('controlador/embed/', core_views.controlador_embed, name='controlador_embed'),
+
 ]

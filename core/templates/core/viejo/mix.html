@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/mix.css' %}">
+
+<div class="mix-root">
+  <div class="mix-grid">
+    <section class="mix-panel mix-cam">
+      <img src="{% url 'video_feed' %}" class="mix-cam-feed" />
+    </section>
+
+    <section class="mix-panel mix-joy">
+      <iframe
+        src="{% url 'controlador_embed' %}"
+        class="mix-joy-frame"
+      ></iframe>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Monitor de Joystick (solo lectura)</h2>
+<pre id="out" style="max-height: 60vh; overflow:auto; background:#111; color:#0f0; padding:8px; border-radius:8px;"></pre>
+
+<script>
+  (function(){
+    const scheme = (location.protocol === 'https:') ? 'wss://' : 'ws://';
+    const ws = new WebSocket(scheme + location.host + '/ws/monitor/');
+
+    function log(line){
+      const el = document.getElementById('out');
+      el.textContent += line + '\n';
+      el.scrollTop = el.scrollHeight;
+    }
+
+    ws.onopen = () => log('[monitor] conectado');
+    ws.onclose = () => log('[monitor] cerrado');
+    ws.onerror = (e) => log('[monitor] error');
+
+    ws.onmessage = (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        // Esperamos campos como {angle, throttle, enable}
+        log('evento: ' + JSON.stringify(data));
+      } catch (err) {
+        log('evento (raw): ' + ev.data);
+      }
+    }
+  })();
+</script>
+{% endblock %}

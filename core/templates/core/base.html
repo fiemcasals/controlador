@@ -1,32 +1,98 @@
-<!DOCTYPE html>
+{% load static %}
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VAE Control</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}VAE{% endblock %}</title>
 
-  <!-- CSS global -->
-  <link rel="stylesheet" href="/static/core/css/styles.css">
+  <!-- Estilos principales -->
+  <link rel="stylesheet" href="{% static 'core/css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+  <!-- Estilos navbar/hamburguesa -->
+  <link rel="stylesheet" href="{% static 'core/css/hamburger-nav.css' %}">
 
-  <!-- CSS específico del layout -->
-  <link rel="stylesheet" href="/static/core/css/layout.css">
+  {% block head_extra %}{% endblock %}
 </head>
-<body>
 
-<nav>              
-    {% if user.is_authenticated %}
-  <a href="/accounts/logout/">Cerrar sesión</a>
-    {% else %}
-  <a href="/accounts/login/">Ingresar</a> · <a href="/registrarse/">Registrarse</a>
-    {% endif %}
-  <a href="/">Inicio</a>
-  <a href="/camara/">Cámara</a>
-  <a href="/controlador/">Controlador</a>
-  <a href="/mix/">Mixto</a>
-  {% if user.is_staff %}<a href="/admin/">Admin</a>{% endif %}
-</nav>
-<main>
-  {% block content %}{% endblock %}
-</main>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="nav-left">
+      <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-controls="navMenu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-logo">VAE Control</div>
+    </div>
+
+    <!-- Menú (off-canvas en mobile) -->
+    <ul class="nav-menu" id="navMenu" aria-hidden="true">
+      {% if user.is_authenticated %}
+        <li><a href="{% url 'home' %}">Inicio</a></li>
+        <li><a href="{% url 'camara' %}">Cámara</a></li>
+        <li><a href="{% url 'control_panel' %}">Controlador</a></li>
+        <li><a href="{% url 'mix' %}">Mixto</a></li>
+        <li><a href="{% url 'monitor' %}">Monitor</a></li>
+        {% if user.is_staff %}
+          <li><a href="/admin/">Admin</a></li>
+        {% endif %}
+        <li><a class="logout" href="{% url 'logout' %}">Cerrar sesión</a></li>
+      {% else %}
+        <li><a href="{% url 'login' %}">Ingresar</a></li>
+        <li><a href="{% url 'register' %}">Registrarse</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <!-- Backdrop para mobile -->
+  <div class="nav-backdrop" id="navBackdrop" hidden></div>
+
+  <!-- Contenido de cada página -->
+  <main class="page-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block body_extra %}{% endblock %}
+
+  <!-- JS del menú (al final para que existan los elementos) -->
+  <script defer>
+    (function () {
+      const toggle = document.getElementById('navToggle');
+      const menu = document.getElementById('navMenu');
+      const backdrop = document.getElementById('navBackdrop');
+
+      function openMenu() {
+        menu.classList.add('open');
+        backdrop.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+        menu.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('nav-lock');
+      }
+      function closeMenu() {
+        menu.classList.remove('open');
+        backdrop.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        menu.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('nav-lock');
+      }
+      function toggleMenu() {
+        menu.classList.contains('open') ? closeMenu() : openMenu();
+      }
+
+      toggle.addEventListener('click', toggleMenu);
+      backdrop.addEventListener('click', closeMenu);
+
+      // Cierra al navegar (útil en mobile)
+      menu.addEventListener('click', (e) => {
+        const a = e.target.closest('a');
+        if (a) closeMenu();
+      });
+
+      // Cierra con ESC
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeMenu();
+      });
+    })();
+  </script>
 </body>
 </html>

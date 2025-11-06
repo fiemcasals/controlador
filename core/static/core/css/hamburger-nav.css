@@ -1,0 +1,56 @@
+/* Barra superior */
+.navbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 10px 14px;
+  background: #fff; border-bottom: 1px solid #eee;
+}
+.nav-left { display: flex; align-items: center; gap: 10px; }
+.nav-logo { font-weight: 700; }
+
+/* Botón hamburguesa */
+.nav-toggle {
+  display: inline-flex; flex-direction: column; gap: 4px;
+  width: 38px; height: 34px; padding: 6px 8px;
+  border: 1px solid #ddd; border-radius: 8px;
+  background: #fff; cursor: pointer;
+}
+.nav-toggle span { display:block; height:3px; width:100%; background:#333; border-radius:2px; }
+
+/* Menú (desktop) */
+.nav-menu {
+  display: flex; gap: 12px; align-items: center;
+  list-style: none; margin: 0; padding: 0;
+}
+.nav-menu a { text-decoration: none; color:#222; padding:8px 10px; border-radius:8px; }
+.nav-menu a:hover { background:#f4f4f4; }
+.logout { color: #b30000; }
+
+/* Backdrop */
+.nav-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.25); z-index: 90;
+}
+
+/* Contenido */
+.page-content { padding: 12px; }
+
+/* Bloqueo de scroll cuando el menú está abierto */
+.nav-lock { overflow: hidden; }
+
+/* --- Mobile / tablet: menú off-canvas --- */
+@media (max-width: 992px) {
+  .nav-menu {
+    position: fixed; top: 0; left: 0; height: 100vh; width: 260px;
+    flex-direction: column; align-items: stretch;
+    padding: 70px 12px 12px; gap: 8px;
+    background: #fff; border-right: 1px solid #eee;
+    transform: translateX(-100%); transition: transform .25s ease;
+    z-index: 99;
+  }
+  .nav-menu.open { transform: translateX(0); }
+}
+
+/* Oculta el backdrop en desktop */
+@media (min-width: 993px) {
+  .nav-backdrop { display: none !important; }
+}

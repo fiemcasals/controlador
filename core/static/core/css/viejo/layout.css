@@ -1,0 +1,50 @@
+/* layout.css — estilos básicos del layout principal */
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, Cantarell, Helvetica, Arial, sans-serif;
+}
+
+header, nav, main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+nav a {
+  
+  margin-right: 12px;
+}
+
+.guard {
+  padding: 8px 10px;
+  background: #222;
+  color: #eee;
+  border-radius: 8px;
+}
+
+/* Evitar que el navegador interprete scroll/zoom mientras se arrastra */
+.joystick, .joystick .stick,
+#barra, .slider-container, #slider,
+.Botones_Aceleracion, #encendido {
+  touch-action: none;
+  user-select: none;
+}
+
+/* Que el joystick escale con la pantalla */
+.joystick {
+  width: min(42vw, 280px);
+  height: min(42vw, 280px);
+  position: relative;
+  border-radius: 50%;
+}
+.joystick .stick {
+  width: 40%;
+  height: 40%;
+  border-radius: 50%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); /* centrado inicial */
+}
+
+

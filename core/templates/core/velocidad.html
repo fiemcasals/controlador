@@ -1,0 +1,24 @@
+<div class="Control-Derecho">
+  <div style="width: 100px;">
+    <div id="barra">
+      <div class="slider-container">
+        <div class="slider" id="slider"></div>
+        <div class="value" id="value">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width: 200px; margin-left: 5px; display: flex; flex-direction: column-reverse; justify-content: space-between; height: 300px;">
+    <button class="Botones_Aceleracion" id="B_baja">Baja</button>
+    <button class="Botones_Aceleracion" id="B_media">Media</button>
+    <button class="Botones_Aceleracion" id="B_alta">Alta</button>
+  </div>
+
+  <div class="Botones_centro" style="margin-top: 12px;">
+    <button id="encendido">Apagado</button>
+  </div>
+</div>
+
+<!-- JS del módulo Velocidad -->
+<script type="module" src="{% static 'core/js/velocidad.js' %}"></script>
+

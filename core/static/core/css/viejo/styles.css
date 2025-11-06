@@ -1,0 +1,71 @@
+/* Barra principal */
+.navbar {
+  background: #111;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+/* Logo */
+.nav-logo {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Menu horizontal en PC */
+.nav-menu {
+  list-style: none;
+  display: flex;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-menu li a {
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.nav-menu li a:hover {
+  text-decoration: underline;
+}
+
+/* Botón hamburguesa */
+.nav-toggle {
+  font-size: 28px;
+  cursor: pointer;
+  display: none; /* visible solo en mobile */
+  user-select: none;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+
+  .nav-toggle {
+    display: block;
+  }
+
+  .nav-menu {
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: 100%;
+    background: #000;
+    flex-direction: column;
+    display: none; /* oculto por defecto */
+    padding: 10px 0;
+    border-top: 1px solid #333;
+  }
+
+  .nav-menu.open {
+    display: flex;
+  }
+
+  .nav-menu li {
+    padding: 10px;
+    text-align: center;
+  }
+}

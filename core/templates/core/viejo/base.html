@@ -1,0 +1,48 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VAE</title>
+  <link rel="stylesheet" href="{% static 'core/css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+</head>
+
+<script>
+document.getElementById("navToggle").onclick = function () {
+  document.getElementById("navMenu").classList.toggle("open");
+};
+</script>
+
+<body>
+  <nav class="navbar">
+  <div class="nav-logo">VAE Control</div>
+
+  <!-- Botón hamburguesa -->
+  <div class="nav-toggle" id="navToggle">
+      &#9776;
+  </div>
+
+  <!-- Links -->
+  <ul class="nav-menu" id="navMenu">
+    {% if user.is_authenticated %}
+      <li><a href="{% url 'home' %}">Inicio</a></li>
+      <li><a href="{% url 'camara' %}">Cámara</a></li>
+      <li><a href="{% url 'controlador' %}">Controlador</a></li>
+      <li><a href="{% url 'mix' %}">Mixto</a></li>
+      <li><a href="{% url 'monitor' %}">Monitor</a></li>
+
+      {% if user.is_staff %}
+        <li><a href="/admin/">Admin</a></li>
+      {% endif %}
+
+      <li><a href="{% url 'logout' %}" class="logout">Cerrar sesión</a></li>
+    {% else %}
+      <li><a href="{% url 'login' %}">Ingresar</a></li>
+      <li><a href="{% url 'register' %}">Registrarse</a></li>
+    {% endif %}
+  </ul>
+</nav>
+</body>
+</html>
