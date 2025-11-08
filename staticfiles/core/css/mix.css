@@ -1,0 +1,127 @@
+/* ===== Alturas de barra fija ===== */
+:root{
+  --header-h: 56px;
+  --nav-h: 44px;
+  --topbar: calc(var(--header-h) + var(--nav-h));
+  --gap: 12px;
+}
+
+/* ===== Header + Nav fijos (no desaparecen) ===== */
+header, nav{
+  position: fixed;
+  left: 0; right: 0;
+  z-index: 1000;
+  color: #eee;
+}
+header{
+  top: 0;
+  background: #111;
+  padding: 10px 20px;
+}
+nav{
+  top: var(--header-h);
+  background: #222;
+  text-align: center;
+  padding: 8px 0;
+}
+nav a{ color:#eee; margin:0 10px; text-decoration:none; }
+nav a:hover{ text-decoration: underline; }
+
+/* Empuja el contenido por debajo de la barra */
+body{ padding-top: var(--topbar); }
+
+/* ===== Lienzo de la página Mixto ===== */
+.mix-page{
+  position: relative;
+  height: calc(100vh - var(--topbar));
+  padding: var(--gap);
+  background: #000;
+  overflow: hidden;                 /* sin scroll general */
+  box-sizing: border-box;
+}
+
+/* Grid: Cámara | Joystick */
+.mix-grid{
+  display: grid;
+  grid-template-columns: 2fr 3fr;   /* cámara | joystick (joystick = 2x) */
+  gap: var(--gap);
+  width: 100%;
+  height: 100%;
+  align-items: stretch;
+}
+
+
+/* Panel base */
+.mix-panel{
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;                 /* recorta desbordes */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== CÁMARA ===== */
+.mix-panel--cam .video-box{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+.mix-panel--cam .video-box img{
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  object-fit: contain;              /* no recorta */
+}
+
+/* ===== JOYSTICK ===== */
+.mix-panel--joy{
+  height: 100%;
+}
+.mix-panel--joy iframe{
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  /* El scroll del documento interno depende de joystick.html */
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px){
+  .mix-grid{ grid-template-columns: 1fr; }
+}
+
+/* --- Romper el límite de 1100px del layout SOLO en /mix --- */
+main{
+  max-width: none !important;
+  width: 100vw;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* El lienzo de /mix ocupa toda la pantalla útil */
+.mix-page{
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - var(--topbar));
+  padding: var(--gap);
+  box-sizing: border-box;
+  background: #000;
+}
+
+/* El grid usa todo el ancho/alto disponible */
+.mix-grid{
+  display: grid;
+  grid-template-columns: 1fr 2fr;   /* cámara | joystick (joystick = 2x) */
+  gap: var(--gap);
+  width: 100%;
+  height: 100%;
+  align-items: stretch;
+}

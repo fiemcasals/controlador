@@ -1,35 +1,38 @@
+# core/views.py
+from __future__ import annotations
+
+import os
+import json
+import time
+from pathlib import Path
+from typing import Generator, Optional
+
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.http import StreamingHttpResponse
+from django.http import (
+    HttpRequest, HttpResponse, JsonResponse, StreamingHttpResponse
+)
+from django.views.decorators.gzip import gzip_page
+from django.views.decorators.http import require_GET
+from django.views.decorators.csrf import csrf_exempt
+
+# --- Form de registro (si lo usás en /registrarse/) ---
 from .forms import RegisterForm
 
-import time
-import cv2
-import os
-import numpy as np
+# --- OpenCV (para /video_feed/) ---
+try:
+    import cv2  # type: ignore
+except Exception:
+    cv2 = None
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PROTOTXT = os.path.join(BASE_DIR, "MobileNetSSD_deploy.prototxt.txt")
-MODEL = os.path.join(BASE_DIR, "MobileNetSSD_deploy.caffemodel")
-
-CLASSES = {0:"background",1:"aeroplane",2:"bicycle",3:"bird",4:"boat",5:"bottle",6:"bus",7:"car",
-           8:"cat",9:"chair",10:"cow",11:"diningtable",12:"dog",13:"horse",14:"motorbike",15:"person",
-           16:"pottedplant",17:"sheep",18:"sofa",19:"train",20:"tvmonitor"}
-
-USE_DETECT = os.path.exists(PROTOTXT) and os.path.exists(MODEL)
-NET = None
-if USE_DETECT:
-    try:
-        NET = cv2.dnn.readNetFromCaffe(PROTOTXT, MODEL)
-    except Exception as e:
-        print("No se pudo cargar MobileNetSSD:", e)
-        NET = None
-
-def home(request):
+# -----------------------------------------------------------------------------
+# PÁGINAS BÁSICAS
+# -----------------------------------------------------------------------------
+def home(request: HttpRequest) -> HttpResponse:
     return render(request, "core/home.html")
 
-def register(request):
+def register(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -43,59 +46,233 @@ def register(request):
     return render(request, "registration/register.html", {"form": form})
 
 @login_required
-def camara(request):
+def camara(request: HttpRequest) -> HttpResponse:
     return render(request, "core/camara.html")
 
 @login_required
-def controlador(request):
+def controlador(request: HttpRequest) -> HttpResponse:
+    # Ajustá al template que uses realmente
     return render(request, "core/controlador.html")
 
 @login_required
-def mix_view(request):
+def mix_view(request: HttpRequest) -> HttpResponse:
     return render(request, "core/mix.html")
 
-def generate_frames():
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FPS, 30)
-    prev_time = 0
-    target_fps = 25
-    frame_time = 1 / target_fps
-    while True:
-        time_elapsed = time.time() - prev_time
-        if time_elapsed < frame_time:
-            time.sleep(frame_time - time_elapsed)
-        success, frame = cap.read()
-        if not success:
-            break
-        prev_time = time.time()
+# -----------------------------------------------------------------------------
+# STREAM DE VIDEO (opcional). Si no lo usás, podés borrar esta sección.
+# -----------------------------------------------------------------------------
+def _open_camera(index: int = 0) -> Optional["cv2.VideoCapture"]:
+    if cv2 is None:
+        return None
+    cap = cv2.VideoCapture(index)
+    if not cap.isOpened():
+        cap.release()
+        return None
+    return cap
 
-        h, w = frame.shape[:2]
-        left_half = frame[:, :w//2]
-        frame_out = cv2.resize(left_half, (w, h*2))
+def _frame_generator(cam_index: int = 0, fps_limit: float = 25.0) -> Generator[bytes, None, None]:
+    delay = 1.0 / max(fps_limit, 1.0)
 
-        if NET is not None:
-            blob = cv2.dnn.blobFromImage(cv2.resize(left_half, (300, 300)), 0.007843, (300, 300), (127.5,127.5,127.5))
-            NET.setInput(blob)
-            detections = NET.forward()
-            H, W = frame_out.shape[:2]
-            for det in detections[0][0]:
-                conf = det[2]
-                if conf > 0.45:
-                    class_id = int(det[1])
-                    label = CLASSES.get(class_id,"unknown")
-                    box = det[3:7] * np.array([W,H,W,H])
-                    x1,y1,x2,y2 = box.astype(int)
-                    cv2.rectangle(frame_out,(x1,y1),(x2,y2),(0,255,0),2)
-                    cv2.putText(frame_out, label, (x1, y1 - 25), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,255), 2)
-                    cv2.putText(frame_out, f"Conf: {conf*100:.2f}%", (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,0,0), 2)
+    if cv2 is None:
+        boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+        try:
+            while True:
+                time.sleep(delay)
+                yield boundary + b"" + b"\r\n"
+        except (GeneratorExit, BrokenPipeError):
+            return
 
-        ret, buffer = cv2.imencode(".jpg", frame_out)
-        if not ret:
-            continue
-        frame_bytes = buffer.tobytes()
-        yield (b"--frame\r\n"
-               b"Content-Type: image/jpeg\r\n\r\n" + frame_bytes + b"\r\n")
+    cap = _open_camera(cam_index)
+    if cap is None:
+        boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
+        try:
+            while True:
+                time.sleep(delay)
+                yield boundary + b"" + b"\r\n"
+        except (GeneratorExit, BrokenPipeError):
+            return
+
+    try:
+        while True:
+            ok, frame = cap.read()
+            if not ok:
+                time.sleep(0.05)
+                continue
+
+            ok, buf = cv2.imencode(".jpg", frame)
+            if not ok:
+                continue
+            jpg = buf.tobytes()
+            yield (b"--frame\r\n"
+                   b"Content-Type: image/jpeg\r\n\r\n" + jpg + b"\r\n")
+            time.sleep(delay)
+    except (GeneratorExit, BrokenPipeError):
+        pass
+    finally:
+        try:
+            cap.release()
+        except Exception:
+            pass
+
+@gzip_page
+@require_GET
+@login_required
+def video_feed(request: HttpRequest) -> StreamingHttpResponse:
+    cam_index = 0
+    try:
+        cam_index = int(request.GET.get("cam", "0"))
+    except ValueError:
+        pass
+    return StreamingHttpResponse(
+        _frame_generator(cam_index=cam_index, fps_limit=25.0),
+        content_type="multipart/x-mixed-replace; boundary=frame",
+    )
+
+# -----------------------------------------------------------------------------
+# RECORRIDOS (API + página)
+# Almacena en: <BASE>/data/recorridos/
+# - _counter.txt   -> lleva el próximo ID
+# - _active.json   -> {"id":..., "name":"...", "ts":...}
+# - <id>.ndjson    -> cada línea es un punto JSON ({"angle":...} o {"ac":...})
+# - <id}.meta.json -> {"id":..., "name":"...", "ts":...}
+# -----------------------------------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parent.parent
+REC_DIR  = BASE_DIR / "data" / "recorridos"
+REC_DIR.mkdir(parents=True, exist_ok=True)
+
+COUNTER_FILE = REC_DIR / "_counter.txt"
+ACTIVE_FILE  = REC_DIR / "_active.json"
+
+def _next_id() -> int:
+    if not COUNTER_FILE.exists():
+        COUNTER_FILE.write_text("1", encoding="utf-8")
+        return 1
+    try:
+        n = int(COUNTER_FILE.read_text(encoding="utf-8").strip() or "0")
+    except ValueError:
+        n = 0
+    n += 1
+    COUNTER_FILE.write_text(str(n), encoding="utf-8")
+    return n
+
+def _load_active() -> dict | None:
+    if not ACTIVE_FILE.exists():
+        return None
+    try:
+        return json.loads(ACTIVE_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+def _save_active(d: dict | None) -> None:
+    if d is None:
+        if ACTIVE_FILE.exists():
+            ACTIVE_FILE.unlink(missing_ok=True)
+        return
+    ACTIVE_FILE.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
 
 @login_required
-def video_feed(request):
-    return StreamingHttpResponse(generate_frames(), content_type="multipart/x-mixed-replace; boundary=frame")
+def recorridos_page(request: HttpRequest) -> HttpResponse:
+    # Template opcional: templates/core/recorridos.html
+    # Si no lo tenés aún, podés hacer uno simple o devolver un mensaje.
+    tpl = "core/recorridos.html"
+    return render(request, tpl)
+
+@csrf_exempt
+@login_required
+def api_recorridos_start(request: HttpRequest) -> JsonResponse:
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+    try:
+        data = json.loads(request.body.decode("utf-8") or "{}")
+    except Exception:
+        data = {}
+    name = (data.get("name") or "").strip()
+    if not name:
+        return JsonResponse({"ok": False, "error": "name requerido"}, status=400)
+
+    # Cerrar activo anterior si hubiese
+    _save_active(None)
+
+    traj_id = _next_id()
+    ts = int(time.time())
+
+    # meta
+    meta = {"id": traj_id, "name": name, "ts": ts}
+    (REC_DIR / f"{traj_id}.meta.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+    # crear archivo de puntos (vacío)
+    (REC_DIR / f"{traj_id}.ndjson").touch()
+
+    # marcar activo
+    _save_active(meta)
+
+    return JsonResponse({"ok": True, "id": traj_id, "name": name})
+
+@csrf_exempt
+@login_required
+def api_recorridos_point(request: HttpRequest) -> JsonResponse:
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+
+    active = _load_active()
+    if not active:
+        return JsonResponse({"ok": False, "error": "no hay recorrido activo"}, status=400)
+
+    try:
+        payload = json.loads(request.body.decode("utf-8") or "{}")
+    except Exception:
+        payload = {}
+
+    # Enriquecer con timestamp
+    payload["_ts"] = int(time.time())
+
+    f = REC_DIR / f"{active['id']}.ndjson"
+    with f.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+    return JsonResponse({"ok": True})
+
+@csrf_exempt
+@login_required
+def api_recorridos_stop(request: HttpRequest) -> JsonResponse:
+    if request.method != "POST":
+        return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+    _save_active(None)
+    return JsonResponse({"ok": True})
+
+@login_required
+def api_recorridos_list(request: HttpRequest) -> JsonResponse:
+    # Lista por metadatos presentes
+    items = []
+    for meta_path in sorted(REC_DIR.glob("*.meta.json")):
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            items.append(meta)
+        except Exception:
+            continue
+    # Si no hay meta (caso raro), intentar deducir
+    if not items:
+        for nd in sorted(REC_DIR.glob("*.ndjson")):
+            try:
+                tid = int(nd.stem)
+            except ValueError:
+                continue
+            items.append({"id": tid, "name": f"recorrido {tid}", "ts": int(nd.stat().st_mtime)})
+    return JsonResponse({"ok": True, "items": items})
+
+@login_required
+def api_recorridos_points(request: HttpRequest, traj_id: int) -> JsonResponse:
+    f = REC_DIR / f"{traj_id}.ndjson"
+    if not f.exists():
+        return JsonResponse({"ok": False, "error": "no existe recorrido"}, status=404)
+    pts = []
+    with f.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                pts.append(json.loads(line))
+            except Exception:
+                continue
+    return JsonResponse({"ok": True, "points": pts})

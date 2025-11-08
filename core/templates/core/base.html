@@ -1,18 +1,18 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VAE Control</title>
-
-  <script src="{% static 'core/js/seguridad.js' %}"></script>
-  <script src="{% static 'core/js/joystick.js' %}"></script>
+  
+  <script type="module" src="{% static 'core/js/script.js' %}"></script>
 
   <!-- CSS global -->
-  <link rel="stylesheet" href="/static/core/css/styles.css">
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
 
   <!-- CSS específico del layout -->
-  <link rel="stylesheet" href="/static/core/css/layout.css">
+  <link rel="stylesheet" href="{% static 'core/css/layout.css' %}">
 </head>
 <body>
 

@@ -5,7 +5,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'dev-secret-for-vae-demo'  # Cambiar en producción
 DEBUG = True
-ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
 
 CSRF_TRUSTED_ORIGINS = [ #<-1.1
     'http://192.168.4.2:8000',  # poné la IP de tu PC si hace falta CSRF para views
