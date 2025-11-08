@@ -3,15 +3,23 @@
 
 {% block content %}
 <link rel="stylesheet" href="{% static 'core/css/controlador.css' %}">
+<link rel="stylesheet" href="{% static 'core/css/mix.css' %}">
+
 
 <div class="controlador-page">
     <div class="joystick-box">
-    <iframe src="/static/core/joystick.html" title="Joystick"></iframe>
+    <iframe
+      src="{% url 'controlador_embed' %}"
+      title="Joystick"
+      class="mix-joy-frame"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+    ></iframe>
   </div>
 
   <p class="info">
     El WebSocket se conecta a <code>ws://&lt;host&gt;/ws</code>.<br>
-    Al cargar, el servidor envía <code>{"encendido": true}</code>.
+    Al cargar, el servidor envía <code>{"en": 1}</code>.
   </p>
 </div>
 {% endblock %}

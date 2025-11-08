@@ -9,13 +9,19 @@
     <!-- Panel izquierdo: Cámara -->
     <section class="mix-panel mix-panel--cam">
       <div class="video-box">
-        <img src="/video_feed/" alt="Video en vivo">
+        <img src="{% url 'video_feed' %}" alt="Video en vivo" class="mix-cam-feed" />
       </div>
     </section>
 
     <!-- Panel derecho: Joystick -->
     <section class="mix-panel mix-panel--joy">
-      <iframe src="/static/core/joystick.html" title="Joystick"></iframe>
+      <iframe
+        src="{% url 'controlador_embed' %}"
+        title="Joystick"
+        class="mix-joy-frame"
+        loading="lazy"
+        referrerpolicy="no-referrer"
+      ></iframe>
     </section>
   </div>
 </div>

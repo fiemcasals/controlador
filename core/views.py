@@ -1,6 +1,7 @@
 # core/views.py
 from __future__ import annotations
 
+import threading
 import os
 import json
 import time
@@ -25,6 +26,11 @@ try:
     import cv2  # type: ignore
 except Exception:
     cv2 = None
+
+# Cámara global compartida
+_CAM = None
+_CAM_LOCK = threading.Lock()
+_CAM_INDEX = 0  # por defecto; podés tomarlo de settings o query
 
 # -----------------------------------------------------------------------------
 # PÁGINAS BÁSICAS
@@ -58,47 +64,56 @@ def controlador(request: HttpRequest) -> HttpResponse:
 def mix_view(request: HttpRequest) -> HttpResponse:
     return render(request, "core/mix.html")
 
-# -----------------------------------------------------------------------------
-# STREAM DE VIDEO (opcional). Si no lo usás, podés borrar esta sección.
-# -----------------------------------------------------------------------------
-def _open_camera(index: int = 0) -> Optional["cv2.VideoCapture"]:
+def _get_shared_camera(index: int = 0) -> Optional["cv2.VideoCapture"]:
     if cv2 is None:
         return None
-    cap = cv2.VideoCapture(index)
-    if not cap.isOpened():
-        cap.release()
-        return None
-    return cap
+    global _CAM, _CAM_INDEX
+    with _CAM_LOCK:
+        # Si ya existe y está abierta, la reutilizamos
+        if _CAM is not None and _CAM.isOpened() and _CAM_INDEX == index:
+            return _CAM
+        # Si el índice cambió o estaba cerrada, (re)abrimos
+        try:
+            if _CAM is not None:
+                _CAM.release()
+        except Exception:
+            pass
+        cap = cv2.VideoCapture(index, cv2.CAP_V4L2)  # en Linux suele ayudar CAP_V4L2
+        if not cap.isOpened():
+            try:
+                cap.release()
+            except Exception:
+                pass
+            return None
+        _CAM = cap
+        _CAM_INDEX = index
+        return _CAM
+
 
 def _frame_generator(cam_index: int = 0, fps_limit: float = 25.0) -> Generator[bytes, None, None]:
     delay = 1.0 / max(fps_limit, 1.0)
 
     if cv2 is None:
         boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
-        try:
-            while True:
-                time.sleep(delay)
-                yield boundary + b"" + b"\r\n"
-        except (GeneratorExit, BrokenPipeError):
-            return
+        while True:
+            time.sleep(delay)
+            yield boundary + b"" + b"\r\n"
 
-    cap = _open_camera(cam_index)
+    cap = _get_shared_camera(cam_index)
     if cap is None:
+        # No podemos abrir la cámara: devolvemos frames vacíos (o mejor: 503 en la vista)
         boundary = b"--frame\r\nContent-Type: image/jpeg\r\n\r\n"
-        try:
-            while True:
-                time.sleep(delay)
-                yield boundary + b"" + b"\r\n"
-        except (GeneratorExit, BrokenPipeError):
-            return
+        while True:
+            time.sleep(delay)
+            yield boundary + b"" + b"\r\n"
 
     try:
         while True:
-            ok, frame = cap.read()
+            with _CAM_LOCK:
+                ok, frame = cap.read()
             if not ok:
                 time.sleep(0.05)
                 continue
-
             ok, buf = cv2.imencode(".jpg", frame)
             if not ok:
                 continue
@@ -108,11 +123,7 @@ def _frame_generator(cam_index: int = 0, fps_limit: float = 25.0) -> Generator[b
             time.sleep(delay)
     except (GeneratorExit, BrokenPipeError):
         pass
-    finally:
-        try:
-            cap.release()
-        except Exception:
-            pass
+
 
 @gzip_page
 @require_GET
@@ -134,7 +145,7 @@ def video_feed(request: HttpRequest) -> StreamingHttpResponse:
 # - _counter.txt   -> lleva el próximo ID
 # - _active.json   -> {"id":..., "name":"...", "ts":...}
 # - <id>.ndjson    -> cada línea es un punto JSON ({"angle":...} o {"ac":...})
-# - <id}.meta.json -> {"id":..., "name":"...", "ts":...}
+# - <id>.meta.json -> {"id":..., "name":"...", "ts":...}
 # -----------------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 REC_DIR  = BASE_DIR / "data" / "recorridos"
@@ -276,3 +287,7 @@ def api_recorridos_points(request: HttpRequest, traj_id: int) -> JsonResponse:
             except Exception:
                 continue
     return JsonResponse({"ok": True, "points": pts})
+
+@login_required
+def controlador_embed(request):
+    return render(request, "core/joystick.html")
