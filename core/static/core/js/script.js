@@ -161,7 +161,6 @@ function acelerar(event) {
 
     if (webSocket) {
       webSocket.send(JSON.stringify(_Acelerar));
-
     }
   }
 }

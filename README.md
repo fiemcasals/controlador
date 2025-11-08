@@ -45,3 +45,11 @@ python manage.py makemigrations
 
 python manage.py migrate core
 python manage.py makemigration core
+
+## para correrlo
+ daphne -b 0.0.0.0 -p 8000 vaesite.asgi:application
+
+ cree la funcion de obstaculo pero no la integre
+ el promt tiene que ser algo que genere un bucle paralizando todo, no solo no enviando el mjs pq cuando se siga una rutina se perderian pasos pero larutirna seguiria mandando los pasos
+
+ 
