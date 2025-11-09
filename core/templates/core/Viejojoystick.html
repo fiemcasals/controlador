@@ -1,0 +1,199 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Joystick Virtual</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}" />
+
+  <style>
+    html, body { height:100%; margin:0; overflow:hidden; }
+    .wrap, #root { width:100%; height:100%; }
+    canvas, svg, img { max-width:100%; height:auto; }
+
+    .joy-toolbar {
+      display:flex; gap:.5rem; align-items:center;
+      margin: .5rem 0 .75rem; flex-wrap: wrap;
+    }
+    .joy-toolbar input[type="text"] { padding:.3rem .5rem; min-width: 220px; }
+    .joy-toolbar select { padding:.3rem .5rem; min-width: 240px; }
+    .joy-toolbar button { min-height: 30px; }
+  </style>
+
+  <!-- Tu lógica actual del joystick -->
+  <!-- Muy importante: type="module" para que exista el DOM al importar abajo -->
+  <script type="module" src="{% static 'core/js/script.js' %}" defer></script>
+</head>
+
+<body>
+  <noscript>Necesitas habilitar JavaScript para usar el joystick.</noscript>
+
+  <!-- Barra integrada de Recorridos -->
+  <div class="joy-toolbar">
+    <input id="recName" type="text" placeholder="Nombre del recorrido…" />
+    <button id="btnStartRec">Grabar</button>
+    <button id="btnStopRec" disabled>Detener</button>
+
+    <select id="recorridoSelect">
+      <option value="">Seleccioná un recorrido…</option>
+    </select>
+    <button id="btnReplay">Reproducir</button>
+  </div>
+
+  <!-- Tu layout existente -->
+  <div class="Control-Isquierdo">
+    <div class="joystick">
+      <div class="stick"></div>
+    </div>
+  </div>
+
+  <div class="Botones_centro">
+    <div>
+      <button id="encendido" style="min-width: 110px;">Apagado</button>
+    </div>
+  </div>
+
+  <div class="Control-Derecho">
+    <div style="width: 100px;">
+      <div id="barra">
+        <div class="slider-container">
+          <div class="slider" id="slider"></div>
+          <div class="value" id="value">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="width: 200px; margin-left: 5px; display: flex; flex-direction: column-reverse; justify-content: space-between; height: 300px;">
+      <button class="Botones_Aceleracion" id="B_baja">Baja</button>
+      <button class="Botones_Aceleracion" id="B_media">Media</button>
+      <button class="Botones_Aceleracion" id="B_alta">Alta</button>
+    </div>
+  </div>
+
+  <!-- Módulo de grabación / reproducción -->
+  <script type="module">
+    import {
+      startRecording, stopRecording, isRecording,
+      logPoint, listTrajectories, replayTrajectory
+    } from "{% static 'core/js/logger.js' %}";
+
+    // ---- Referencias UI
+    const $name = document.getElementById('recName');
+    const $start = document.getElementById('btnStartRec');
+    const $stop  = document.getElementById('btnStopRec');
+    const $sel   = document.getElementById('recorridoSelect');
+    const $play  = document.getElementById('btnReplay');
+
+    // ---- Acceso al WebSocket del joystick (creado en tu script.js)
+    // Esperamos a que window.webSocket exista y esté listo
+    async function waitForWS(timeoutMs = 5000) {
+      const t0 = performance.now();
+      while (performance.now() - t0 < timeoutMs) {
+        if (window.webSocket && window.webSocket.readyState === 1) return window.webSocket;
+        await new Promise(r => setTimeout(r, 100));
+      }
+      return window.webSocket || null;
+    }
+
+    // Wrapper de envío: usa TU webSocket y además registra el punto si está grabando
+    async function sendPayload(p) {
+      const ws = await waitForWS();
+      if (!ws || ws.readyState !== 1) return;
+      try { ws.send(JSON.stringify(p)); } catch(e) {}
+      await logPoint(p); // throttle interno
+    }
+
+    // (Opcional) Parchear send para no tocar tu script.js:
+    // Si tu código hace ws.send(JSON_string), igual lo registramos si hay grabación
+    function patchWebSocketSend(ws) {
+      if (!ws || ws._vaePatched) return;
+      const original = ws.send.bind(ws);
+      ws.send = function(data) {
+        try {
+          // Llamada original primero
+          original(data);
+          // Si estamos grabando y es JSON, lo logueamos
+          if (isRecording()) {
+            let obj = null;
+            if (typeof data === 'string') obj = JSON.parse(data);
+            else if (data instanceof Blob) { /* omitimos blobs */ }
+            else if (data && typeof data === 'object') obj = data;
+
+            if (obj && typeof obj === 'object') {
+              logPoint(obj); // asíncrono; no esperamos
+            }
+          }
+        } catch (e) {
+          // igual no rompemos el envío
+        }
+      };
+      ws._vaePatched = true;
+    }
+
+    // Intentamos parchear cuando el WS aparezca
+    (async () => {
+      const ws = await waitForWS();
+      patchWebSocketSend(ws);
+    })();
+
+    // Si más tarde tu script recrea el WS, podés volver a parchear así:
+    // window.addEventListener('vae-ws-ready', (e) => patchWebSocketSend(e.detail.ws));
+
+    // ---- Lógica de la barra
+    async function reloadList() {
+      const data = await listTrajectories();
+      $sel.innerHTML = `<option value="">Seleccioná un recorrido…</option>`;
+      if (!data.ok) return;
+      const items = (data.items || []).sort((a,b) => (b.ts||0)-(a.ts||0));
+      for (const r of items) {
+        const dt = r.ts ? new Date(r.ts*1000).toLocaleString() : '';
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = `#${r.id} · ${r.name}${dt ? ` (${dt})` : ''}`;
+        $sel.appendChild(opt);
+      }
+    }
+
+    $start.addEventListener('click', async () => {
+      const nm = ($name.value || '').trim();
+      if (!nm) { alert('Poné un nombre para el recorrido.'); $name.focus(); return; }
+      const r = await startRecording(nm);
+      if (r.ok) {
+        $start.disabled = true;
+        $stop.disabled = true; // lo habilitamos tras confirmar que el WS está listo
+        const ws = await waitForWS();
+        if (!ws || ws.readyState !== 1) {
+          alert('Grabando, pero el WebSocket todavía no está listo.');
+        }
+        $stop.disabled = false;
+      } else {
+        alert(r.error || 'No se pudo iniciar la grabación.');
+      }
+    });
+
+    $stop.addEventListener('click', async () => {
+      const r = await stopRecording();
+      if (r.ok) {
+        $start.disabled = false;
+        $stop.disabled  = true;
+        await reloadList();
+      }
+    });
+
+    $play.addEventListener('click', async () => {
+      const id = parseInt($sel.value, 10);
+      if (!id) { alert('Elegí un recorrido.'); return; }
+      // Reenvía cada punto a tu mismo WS con timing por _ts
+      await replayTrajectory(id, sendPayload, { respectTimestamps: true, intervalMs: 80 });
+    });
+
+    // Cargar lista al abrir
+    await reloadList();
+
+    // ---- Exportar por si querés usar en tu script.js
+    window.vaeReplay = { sendPayload, reloadList };
+  </script>
+</body>
+</html>

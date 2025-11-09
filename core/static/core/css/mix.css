@@ -125,3 +125,21 @@ main{
   height: 100%;
   align-items: stretch;
 }
+
+.mix-joy-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 420px; /* o el alto mínimo que quieras */
+  border: 0;
+  display: block;
+}
+
+/* Asegurá que el panel derecho permita que el iframe crezca */
+.mix-panel--joy {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;     /* evita overflow en contenedores flex */
+}
+.mix-panel--joy > .mix-joy-frame {
+  flex: 1 1 auto;
+}
