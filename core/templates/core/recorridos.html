@@ -1,90 +1,69 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Recorridos</title>
-  <meta name="csrf-token" content="{{ csrf_token }}">
-  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
-</head>
-<body>
-  <h1>Recorridos</h1>
+  <title>Joystick Virtual</title>
 
-  <div style="display:flex; gap: .5rem; margin-bottom: 1rem;">
-    <button id="btnStartRec">Iniciar grabación</button>
-    <button id="btnStopRec">Detener grabación</button>
-    <button id="btnReload">Actualizar lista</button>
+  <!-- CSS -->
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}" />
+
+  <style>
+    html, body { height:100%; margin:0; overflow:hidden; }
+    .wrap, #root { width:100%; height:100%; }
+    canvas, svg, img { max-width:100%; height:auto; }
+  </style>
+
+  <!-- JS (ES Modules) -->
+  <!-- Muy importante: usar type="module" y defer para que el DOM exista -->
+  <script type="module" src="{% static 'core/js/script.js' %}" defer></script>
+</head>
+
+<body>
+  <noscript>Necesitas habilitar JavaScript para usar el joystick.</noscript>
+
+  <div class="Control-Isquierdo">
+    <div class="joystick">
+      <div class="stick"></div>
+    </div>
   </div>
 
-  <table border="1" cellpadding="6">
-    <thead>
-      <tr><th>ID</th><th>Nombre</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr>
-    </thead>
-    <tbody id="tblRecorridos">
-      {% for r in recorridos %}
-      <tr>
-        <td>{{ r.id }}</td>
-        <td>{{ r.name }}</td>
-        <td>{{ r.started_at }}</td>
-        <td>{{ r.ended_at|default:"—" }}</td>
-        <td>{{ r.is_active|yesno:"Activo,Completo" }}</td>
-        <td><button class="btnReplayRow" data-id="{{ r.id }}">Reproducir</button></td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6">Sin recorridos aún.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="Botones_centro">
+    <div>
+      <button id="encendido" style="min-width: 110px;">Apagado</button>
+    </div>
+  </div>
 
-  <hr />
-  <p>También podés reproducir desde el joystick con el botón “Reproducir” si agregás un botón con id <code>btnReplay</code>.</p>
+  <div class="Control-Derecho">
+    <div style="width: 100px;">
+      <div id="barra">
+        <div class="slider-container">
+          <div class="slider" id="slider"></div>
+          <div class="value" id="value">0</div>
+        </div>
+      </div>
+    </div>
 
-  <script type="module">
-    import { listTrajectories, replayTrajectory, startRecording, stopRecording } from "{% static 'core/js/logger.js' %}";
+    <!-- Controles de recorridos -->
+    <div id="recorder-controls" style="margin-top: 10px;">
+      <label for="recorridoSelect">Recorrido:</label>
+      <select id="recorridoSelect">
+        <option value="">Seleccionar...</option>
+      </select>
+      <button id="btnReplay">Reproducir</button>
+      <!-- Los botones de grabación son opcionales; script.js los maneja sólo si existen -->
+      <!--
+      <button id="btnStartRec">Grabar</button>
+      <button id="btnStopRec">Detener</button>
+      -->
+    </div>
 
-    async function reload() {
-      const data = await listTrajectories();
-      const tbody = document.getElementById("tblRecorridos");
-      tbody.innerHTML = "";
-      if (!data.ok || data.items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6">Sin recorridos.</td></tr>`;
-        return;
-      }
-      for (const r of data.items) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${r.id}</td>
-          <td>${r.name}</td>
-          <td>${r.started_at}</td>
-          <td>${r.ended_at ?? "—"}</td>
-          <td>${r.is_active ? "Activo" : "Completo"}</td>
-          <td><button class="btnReplayRow" data-id="${r.id}">Reproducir</button></td>
-        `;
-        tbody.appendChild(tr);
-      }
-      document.querySelectorAll(".btnReplayRow").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const id = parseInt(btn.dataset.id, 10);
-          // Para esta page no tenemos tu WebSocket del joystick; acá sólo descargamos y mostramos conteo
-          const resp = await fetch(`/api/recorridos/${id}/points`);
-          const js = await resp.json();
-          alert(`Recorrido "${js.trajectory}" con ${js.points.length} puntos.`);
-        });
-      });
-    }
-
-    document.getElementById("btnReload").addEventListener("click", reload);
-    document.getElementById("btnStartRec").addEventListener("click", async () => {
-      const name = prompt("Nombre del recorrido:");
-      if (!name) return;
-      const r = await startRecording(name);
-      if (r.ok) { alert("Grabando…"); } else { alert("No se pudo iniciar"); }
-    });
-    document.getElementById("btnStopRec").addEventListener("click", async () => {
-      const r = await stopRecording();
-      if (r.ok) { alert("Grabación detenida."); await reload(); }
-    });
-
-  </script>
+    <div style="width: 200px; margin-left: 5px; display: flex; flex-direction: column-reverse; justify-content: space-between; height: 300px;">
+      <button class="Botones_Aceleracion" id="B_baja">Baja</button>
+      <button class="Botones_Aceleracion" id="B_media">Media</button>
+      <button class="Botones_Aceleracion" id="B_alta">Alta</button>
+    </div>
+  </div>
 </body>
 </html>
+

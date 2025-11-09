@@ -6,8 +6,11 @@ import {
   stopRecording,
   isRecording,
   replayTrajectory,
-  listTrajectories
+  listTrajectories,
+  sendPayload
 } from './logger.js';
+
+
 
 window.addEventListener('DOMContentLoaded', () => {
   // Helpers
@@ -65,8 +68,8 @@ window.addEventListener('DOMContentLoaded', () => {
     stick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 
     // Throttle sencillo (evitá busy-wait bloqueante)
-    trySendWS(JSON.stringify(angulo), 30);
-    logPoint(angulo);
+    sendPayload(angulo);
+
   }
 
   if (joystick && stick) {
@@ -92,7 +95,8 @@ window.addEventListener('DOMContentLoaded', () => {
         if (message.encendido === true) {
           // Sólo envía si realmente está open
           if (socket.readyState === WebSocket.OPEN) {
-            socket.send(JSON.stringify({ en: 1 }));
+            
+            sendPayload({ en: 1 })
           }
         }
       };
@@ -119,7 +123,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const now = performance.now();
     if (now - lastSend < minIntervalMs) return;
     lastSend = now;
-    webSocket.send(payload);
+    sendPayload(payLoad);
+    
   }
 
   // ---------------- Aceleración ----------------
@@ -149,8 +154,7 @@ window.addEventListener('DOMContentLoaded', () => {
     valueElement.textContent = Math.round(value) + '%';
 
     if (webSocket && webSocket.readyState === WebSocket.OPEN && obstaculoAlFrente() === false) {
-      trySendWS(JSON.stringify(_Acelerar), 10);
-      logPoint(_Acelerar);
+      sendPayload(_Acelerar);
     }
   }
 
@@ -165,8 +169,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (slider) slider.style.height = '0%';
     _Acelerar.ac = 0;
     if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      webSocket.send(JSON.stringify(_Acelerar));
-      logPoint(_Acelerar);
+      sendPayload(_Acelerar);
+
     }
   }
 
