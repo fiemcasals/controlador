@@ -5,18 +5,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>VAE Control</title>
-  
-  
-  <script type="module" src="{% static 'core/js/script.js' %}?v={{ timestamp }}"></script>
+
+  <!-- Inyectamos la URL del WebSocket desde Django a JS -->
+  <script>
+    console.log("VEHICLE_WS_URL desde Django:", "{{ vehicle_ws_url }}");
+    window.VEHICLE_WS_URL = "{{ vehicle_ws_url|default:''|escapejs }}";
+  </script>
+
+  <!-- Script principal (usa ws.client.js dentro) -->
+  <script type="module" src="{% static 'core/js/script.js' %}?v={{ timestamp|default:'' }}"></script>
 
   <!-- CSS global -->
   <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
-
   <!-- CSS específico del layout -->
   <link rel="stylesheet" href="{% static 'core/css/layout.css' %}">
 </head>
-<body>
 
+<body>
 <nav>              
     {% if user.is_authenticated %}
   <a href="/accounts/logout/">Cerrar sesión</a>

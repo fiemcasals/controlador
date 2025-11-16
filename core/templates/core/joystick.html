@@ -5,15 +5,21 @@
   <meta charset="utf-8" />
   <title>Joystick Virtual</title>
 
-  <!-- CSS global que ya usás -->
+  <!-- Inyectamos la URL del WebSocket solo para el iframe -->
+  <script>
+    console.log("VEHICLE_WS_URL (iframe):", "{{ vehicle_ws_url }}");
+    window.VEHICLE_WS_URL = "{{ vehicle_ws_url|default:''|escapejs }}";
+  </script>
+
+  <!-- JS principal (usa ws.client.js, etc) -->
+  <script type="module" src="{% static 'core/js/script.js' %}?v={{ timestamp|default:'' }}"></script>
+  <!-- Lógica específica del joystick: toolbar, replay, etc. -->
+  <script type="module" src="{% static 'core/js/joystick.page.js' %}" defer></script>
+
+  <!-- CSS global que quieras compartir -->
   <link rel="stylesheet" href="{% static 'core/css/styles.css' %}" />
   <!-- CSS específico del joystick -->
   <link rel="stylesheet" href="{% static 'core/css/joystick.css' %}" />
-
-  <!-- Engine actual del joystick (tu archivo existente) -->
-  <script type="module" src="{% static 'core/js/script.js' %}" defer></script>
-  <!-- Lógica de página: toolbar, replay, WS, etc. -->
-  <script type="module" src="{% static 'core/js/joystick.page.js' %}" defer></script>
 </head>
 <body>
   <noscript>Necesitas habilitar JavaScript para usar el joystick.</noscript>

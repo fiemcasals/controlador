@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from ..forms import RegisterForm
 from django.utils.timezone import now
+from django.conf import settings
 
 def home(request: HttpRequest) -> HttpResponse:
     return render(request, "core/home.html")
@@ -29,15 +30,27 @@ def camara(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def controlador(request: HttpRequest) -> HttpResponse:
-    return render(request, "core/controlador.html", {
-        "timestamp": now().timestamp()
-    })
-    
+    return render(
+        request,
+        "core/controlador.html",
+        {
+            "timestamp": now().timestamp(),
+            "vehicle_ws_url": settings.VEHICLE_WS_URL,
+        },
+    )
+
+
+@login_required
+def controlador_embed(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "core/joystick.html",
+        {
+            "timestamp": now().timestamp(),
+            "vehicle_ws_url": settings.VEHICLE_WS_URL,
+        },
+    )
 
 @login_required
 def mix_view(request: HttpRequest) -> HttpResponse:
     return render(request, "core/mix.html")
-
-@login_required
-def controlador_embed(request: HttpRequest) -> HttpResponse:
-    return render(request, "core/joystick.html")
