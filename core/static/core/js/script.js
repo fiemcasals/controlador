@@ -7,10 +7,7 @@ import {
   isRecording,
   replayTrajectory,
   listTrajectories,
-  sendPayload
 } from './logger.js';
-
-
 
 window.addEventListener('DOMContentLoaded', () => {
   // Helpers
@@ -34,7 +31,7 @@ window.addEventListener('DOMContentLoaded', () => {
     isDragging = false;
     if (stick) {
       stick.style.transition = 'all 0.1s ease';
-      // Volver al centro visual del joystick (ajusta si usás translate(-50%,-50%) en CSS)
+      // Volver al centro visual del joystick
       stick.style.transform = 'translate(-50%, -50%)';
     }
   }
@@ -46,7 +43,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const stickRect    = stick.getBoundingClientRect();
 
     // Primer dedo
-    let touch = ev.touches && ev.touches[0] ? ev.touches[0] : null;
+    const touch = ev.touches && ev.touches[0] ? ev.touches[0] : null;
     if (!touch) return;
 
     const offsetX = touch.clientX - joystickRect.left - joystickRect.width / 2;
@@ -56,20 +53,19 @@ window.addEventListener('DOMContentLoaded', () => {
     const distance  = Math.min(Math.hypot(offsetX, offsetY), maxOffset);
 
     const angleRad = Math.atan2(offsetY, offsetX);
-    let angleDeg   = angleRad * (180 / Math.PI);
-    // Tu ajuste original
+    const angleDeg = angleRad * (180 / Math.PI);
+
+    // Ajuste original
     angulo.angle   = angleDeg * (-1) - 17;
 
     const x = distance * Math.cos(angleRad);
     const y = distance * Math.sin(angleRad);
 
-    // Si tu CSS del stick ya lo centra con translate(-50%, -50%), sumá el desplazamiento con translate calc:
-    // Mueve relativo al centro
+    // Movimiento relativo al centro
     stick.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 
-    // Throttle sencillo (evitá busy-wait bloqueante)
+    // Enviar ángulo
     sendPayload(angulo);
-
   }
 
   if (joystick && stick) {
@@ -78,9 +74,34 @@ window.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('touchmove',  drag, { passive: false });
   }
 
-  // ---------------- WebSocket ----------------
-  const servidor  = `ws://${window.location.hostname}/ws`; // ajustá si tu ruta Channels es otra
+  // ---------------- WebSocket + sendPayload ----------------
+  const servidor  = `ws://192.168.4.1/ws`; // ajustá si tu ruta Channels es otra
   let   webSocket = null;
+  let   lastSend  = 0;  // throttle envío
+
+  /**
+   * Único punto de envío al auto:
+   * - Hace WebSocket.send(JSON.stringify(payload)) con throttle
+   * - Llama a logPoint(payload) para registrar el punto si hay grabación
+   */
+  function sendPayload(payload, minIntervalMs = 30) {
+    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) return;
+
+    const now = performance.now();
+    if (now - lastSend < minIntervalMs) return; // throttle simple
+    lastSend = now;
+
+    try {
+      webSocket.send(JSON.stringify(payload));
+      console.log(JSON.stringify(payload));
+      
+    } catch (e) {
+      console.error('WS send error:', e);
+    }
+
+    // Registrar en el logger (si está en modo grabación)
+    logPoint(payload);
+  }
 
   function connectWebSocket() {
     try {
@@ -93,10 +114,9 @@ window.addEventListener('DOMContentLoaded', () => {
       socket.onmessage = (event) => {
         const message = JSON.parse(event.data || '{}');
         if (message.encendido === true) {
-          // Sólo envía si realmente está open
           if (socket.readyState === WebSocket.OPEN) {
-            
-            sendPayload({ en: 1 })
+            // mando "en:1" y lo registro
+            sendPayload({ en: 1 });
           }
         }
       };
@@ -116,20 +136,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Pequeño throttle para no saturar
-  let lastSend = 0;
-  function trySendWS(payload, minIntervalMs = 30) {
-    if (!webSocket || webSocket.readyState !== WebSocket.OPEN) return;
-    const now = performance.now();
-    if (now - lastSend < minIntervalMs) return;
-    lastSend = now;
-    sendPayload(payLoad);
-    
-  }
-
   // ---------------- Aceleración ----------------
   const slider       = byId('slider');
-  const barra       = byId('barra');
+  const barra        = byId('barra');
   const valueElement = byId('value');
 
   let fondoEscala   = 0;
@@ -139,21 +148,21 @@ window.addEventListener('DOMContentLoaded', () => {
   function acelerar(ev) {
     if (!isAcelerando || !barra || !slider || !valueElement) return;
 
-    const rect  = barra.getBoundingClientRect();
-    const t0    = ev.touches && ev.touches[0] ? ev.touches[0] : null;
+    const rect = barra.getBoundingClientRect();
+    const t0   = ev.touches && ev.touches[0] ? ev.touches[0] : null;
     if (!t0) return;
 
     let value = ((rect.bottom - t0.clientY) / rect.height) * 100;
     if (value > 100) value = 100;
     if (value < 0)   value = 0;
-
+    console.log("valor de aceleracion: ", value);
     _Acelerar.ac = value * fondoEscala;
 
-    slider.style.height     = value + '%';
-    slider.style.transition = '0.1s';
+    slider.style.height      = value + '%';
+    slider.style.transition  = '0.1s';
     valueElement.textContent = Math.round(value) + '%';
 
-    if (webSocket && webSocket.readyState === WebSocket.OPEN && obstaculoAlFrente() === false) {
+    if (webSocket && webSocket.readyState === WebSocket.OPEN && !obstaculoAlFrente()) {
       sendPayload(_Acelerar);
     }
   }
@@ -170,7 +179,6 @@ window.addEventListener('DOMContentLoaded', () => {
     _Acelerar.ac = 0;
     if (webSocket && webSocket.readyState === WebSocket.OPEN) {
       sendPayload(_Acelerar);
-
     }
   }
 
@@ -263,7 +271,11 @@ window.addEventListener('DOMContentLoaded', () => {
       alert('Conectá el WebSocket primero');
       return;
     }
-    await replayTrajectory(id, webSocket, 50);
+    // Usamos sendPayload como función de envío
+    await replayTrajectory(id, sendPayload, {
+      respectTimestamps: true,
+      intervalMs: 80,
+    });
   }
 
   if (btnReplayPrompt && !select) {

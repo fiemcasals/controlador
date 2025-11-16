@@ -52,4 +52,5 @@ python manage.py makemigration core
  cree la funcion de obstaculo pero no la integre
  el promt tiene que ser algo que genere un bucle paralizando todo, no solo no enviando el mjs pq cuando se siga una rutina se perderian pasos pero larutirna seguiria mandando los pasos
 
- 
+ hay que ver nuevamente la funcion de parar
+ hay que ver si funciona realmente bien lo de la trayectoria, pq hasta ahora no guarda nada, pq necesita que eel websocket este funcionando

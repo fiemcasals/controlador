@@ -76,7 +76,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------------- WebSocket ----------------
-  const servidor  = `ws://${window.location.hostname}/ws`; // ajustá si tu ruta Channels es otra
+  //const servidor  = `ws://${window.location.hostname}/ws`; // ajustá si tu ruta Channels es otra
+  const servidor  = `ws://192.168.4.1:80/ws`;
   let   webSocket = null;
 
   function connectWebSocket() {

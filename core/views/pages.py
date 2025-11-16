@@ -5,6 +5,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from ..forms import RegisterForm
+from django.utils.timezone import now
 
 def home(request: HttpRequest) -> HttpResponse:
     return render(request, "core/home.html")
@@ -28,7 +29,10 @@ def camara(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def controlador(request: HttpRequest) -> HttpResponse:
-    return render(request, "core/controlador.html")
+    return render(request, "core/controlador.html", {
+        "timestamp": now().timestamp()
+    })
+    
 
 @login_required
 def mix_view(request: HttpRequest) -> HttpResponse:
