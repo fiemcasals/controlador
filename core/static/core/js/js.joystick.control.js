@@ -1,4 +1,4 @@
-// static/core/js/joystick.control.js
+// static/core/js/js.joystick.control.js
 // Control del joystick táctil: calcula ángulo y lo envía al auto.
 
 import { sendPayload } from "./ws.client.js";

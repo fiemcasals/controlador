@@ -1,3 +1,4 @@
+{# templates/core/controlador.html #}
 {% extends "core/base.html" %}
 {% load static %}
 
@@ -5,9 +6,8 @@
 <link rel="stylesheet" href="{% static 'core/css/controlador.css' %}">
 <link rel="stylesheet" href="{% static 'core/css/mix.css' %}">
 
-
 <div class="controlador-page">
-    <div class="joystick-box">
+  <div class="joystick-box">
     <iframe
       src="{% url 'controlador_embed' %}"
       title="Joystick"
@@ -23,4 +23,3 @@
   </p>
 </div>
 {% endblock %}
-

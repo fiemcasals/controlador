@@ -37,6 +37,7 @@ export async function startRecording(name) {
   return r;
 }
 
+
 export async function stopRecording() {
   const r = await _post('/api/recorridos/stop/', {});
   if (r.ok) _recording = false;

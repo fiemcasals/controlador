@@ -1,4 +1,4 @@
-// static/core/js/acceleration.ui.js
+// static/core/js/js.acceleration.ui.js
 // Barra de aceleración + botones de escala (baja, media, alta).
 
 import { obstaculoAlFrente } from "./seguridad.js";

@@ -1,3 +1,4 @@
+{# templates/core/joystick.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -5,18 +6,7 @@
   <meta charset="utf-8" />
   <title>Joystick Virtual</title>
 
-  <!-- Inyectamos la URL del WebSocket solo para el iframe -->
-  <script>
-    console.log("VEHICLE_WS_URL (iframe):", "{{ vehicle_ws_url }}");
-    window.VEHICLE_WS_URL = "{{ vehicle_ws_url|default:''|escapejs }}";
-  </script>
-
-  <!-- JS principal (usa ws.client.js, etc) -->
-  <script type="module" src="{% static 'core/js/script.js' %}?v={{ timestamp|default:'' }}"></script>
-  <!-- Lógica específica del joystick: toolbar, replay, etc. -->
-  <script type="module" src="{% static 'core/js/joystick.page.js' %}" defer></script>
-
-  <!-- CSS global que quieras compartir -->
+  <!-- CSS global -->
   <link rel="stylesheet" href="{% static 'core/css/styles.css' %}" />
   <!-- CSS específico del joystick -->
   <link rel="stylesheet" href="{% static 'core/css/joystick.css' %}" />
@@ -24,7 +14,19 @@
 <body>
   <noscript>Necesitas habilitar JavaScript para usar el joystick.</noscript>
 
-  {# Cuerpo real del joystick (toolbar + layout) #}
+  {# Cuerpo real del joystick (toolbar + layout + input nombre recorrido) #}
   {% include "core/partials/_joystick_body.html" %}
+
+  <!-- Inyectamos la URL del WebSocket solo para el iframe -->
+  <script>
+    console.log("VEHICLE_WS_URL (iframe):", "{{ vehicle_ws_url }}");
+    window.VEHICLE_WS_URL = "{{ vehicle_ws_url|default:''|escapejs }}";
+  </script>
+
+  <!-- JS principal (usa ws.client.js, logger, etc) -->
+  <script type="module" src="{% static 'core/js/script.js' %}?v={{ timestamp|default:'' }}"></script>
+
+  <!-- Lógica específica de la página del joystick: toolbar, replay, etc. -->
+  <script type="module" src="{% static 'core/js/joystick.page.js' %}?v={{ timestamp|default:'' }}"></script>
 </body>
 </html>
