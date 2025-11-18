@@ -5,10 +5,8 @@ from .views.camera import (
     video_feed,
     object_detection_feed,
     deteccion,
-    stereo_grid_feed,
-    stereo_depth_feed,
-    stereo_detect,
 )
+from .views.pages import stereo_grid_feed, stereo_depth_feed, stereo_detect
 
 urlpatterns = [
     # Páginas principales
