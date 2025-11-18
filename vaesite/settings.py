@@ -6,13 +6,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'dev-secret-for-vae-demo'  # Cambiar en producción
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '172.28.43.60']
 
 CSRF_TRUSTED_ORIGINS = [ #<-1.1
     'http://192.168.4.2:8000',  # poné la IP de tu PC si hace falta CSRF para views
     # agregá otras si corresponde
     'http://localhost:8000',     # por si probás local
     'http://127.0.0.1:8000',
+    'http://172.28.43.60:8000',
     
 ]
 
@@ -102,6 +103,7 @@ CHANNEL_LAYERS = {
     }
 }
 
+
 # settings.py
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'       # o '/camara/' si preferís ir directo a la cámara
@@ -115,8 +117,6 @@ VEHICLE_WS_CONNECT_TIMEOUT = 5
 # A DÓNDE enviar los comandos (la IP/PUERTO donde corre el monitor_udp.py)
 MONITOR_UDP_IP = "192.168.4.4"   # <-- poné la IP de la PC del monitor
 MONITOR_UDP_PORT = 9999           # <-- mismo puerto que usás al ejecutar el monitor
-#MONITOR_UDP_IP = "192.168.1.21"   # <-- poné la IP de la PC del monitor
-#MONITOR_UDP_PORT = 9999           # <-- mismo puerto que usás al ejecutar el monitor
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
