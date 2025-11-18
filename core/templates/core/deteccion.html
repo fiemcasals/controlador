@@ -1,0 +1,17 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/camara.css' %}">
+
+<section class="camara-page">
+  <h1>Detección de objetos</h1>
+  <p>Vista de la cámara con detección de objetos en tiempo real (MobileNetSSD).</p>
+
+  <div class="camara-frame">
+    <img src="{% url 'object_detection_feed' %}" alt="Detección de objetos">
+  </div>
+
+  <a href="/" class="btn btn-secondary">Volver</a>
+</section>
+{% endblock %}

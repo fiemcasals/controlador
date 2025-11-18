@@ -1,0 +1,17 @@
+<!--camara_grid.html-->
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/camara.css' %}">
+
+<div class="camara-page">
+  <h1>Cámara - Vista con grid</h1>
+
+  <div class="camara-frame">
+    <img src="{{ grid_url }}" alt="Cámara con líneas de referencia">
+  </div>
+
+  <a href="/" class="btn btn-secondary">Volver</a>
+</div>
+{% endblock %}

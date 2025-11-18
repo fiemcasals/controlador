@@ -1,0 +1,147 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'core/css/camara.css' %}">
+
+<!-- Podés hacer un CSS propio tipo sensores.css si querés -->
+<style>
+  .sensores-page {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    height: calc(100vh - 80px); /* resto del nav */
+    padding: 1rem;
+    box-sizing: border-box;
+  }
+  .sensores-panel {
+    width: 20%;
+    min-width: 260px;
+    background: #111;
+    color: #eee;
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+  .sensores-panel h2 {
+    margin-top: 0;
+    font-size: 1.2rem;
+  }
+  .sensores-group {
+    margin-bottom: 1.2rem;
+  }
+  .sensores-group h3 {
+    margin: 0 0 0.4rem 0;
+    font-size: 1rem;
+    color: #9ad;
+  }
+  .sensores-group dl {
+    margin: 0;
+  }
+  .sensores-group dt {
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+  .sensores-group dd {
+    margin: 0 0 0.4rem 0;
+    font-family: monospace;
+  }
+
+  .sensores-map {
+    width: 80%;
+    background: #000;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .sensores-map-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    color: #aaa;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+    box-sizing: border-box;
+    border: 2px dashed #444;
+  }
+</style>
+
+<!-- JS específico de sensores -->
+<script type="module" src="{% static 'core/js/sensores.js' %}?v={{ timestamp|default:'' }}"></script>
+
+<div class="sensores-page">
+  <!-- Panel lateral con datos numéricos -->
+  <aside class="sensores-panel">
+    <h2>Sensores del VAE</h2>
+
+    <div class="sensores-group">
+      <h3>Inclinación (°)</h3>
+      <dl>
+        <dt>Roll (X):</dt>
+        <dd id="roll-value">--</dd>
+        <dt>Pitch (Y):</dt>
+        <dd id="pitch-value">--</dd>
+        <dt>Yaw / Heading (Z):</dt>
+        <dd id="yaw-value">--</dd>
+      </dl>
+    </div>
+
+    <div class="sensores-group">
+      <h3>Aceleración (m/s²)</h3>
+      <dl>
+        <dt>Ax:</dt>
+        <dd id="ax-value">--</dd>
+        <dt>Ay:</dt>
+        <dd id="ay-value">--</dd>
+        <dt>Az:</dt>
+        <dd id="az-value">--</dd>
+      </dl>
+    </div>
+
+    <div class="sensores-group">
+      <h3>Posición GPS</h3>
+      <dl>
+        <dt>Latitud:</dt>
+        <dd id="lat-value">--</dd>
+        <dt>Longitud:</dt>
+        <dd id="lon-value">--</dd>
+        <dt>Altitud (m):</dt>
+        <dd id="alt-value">--</dd>
+        <dt>Rumbo (°):</dt>
+        <dd id="rumbo-value">--</dd>
+      </dl>
+    </div>
+
+    <div class="sensores-group">
+      <h3>Estado</h3>
+      <dl>
+        <dt>Última actualización:</dt>
+        <dd id="updated-at">--</dd>
+      </dl>
+    </div>
+
+    <a href="/" class="btn btn-secondary">Volver al inicio</a>
+  </aside>
+
+  <!-- Área principal (80%): mapa tipo GPS -->
+  <section class="sensores-map">
+    <!-- La intención es que esto ocupe ~80% de la pantalla con un mapa (Leaflet, etc.) -->
+    <!-- Ejemplo futuro:
+         <div id="map"></div>
+         Y en JS:
+         const map = L.map('map').setView([lat, lon], 18);
+         L.tileLayer(...).addTo(map);
+         L.marker([lat, lon]).addTo(map);
+    -->
+    <div class="sensores-map-placeholder">
+      <p>
+        Aquí irá el <strong>mapa GPS</strong> ocupando ~80% de la pantalla.<br>
+        La idea es posicionar el vehículo usando las coordenadas recibidas<br>
+        (lat, lon) y el rumbo, con alguna librería tipo Leaflet u otra.
+      </p>
+    </div>
+  </section>
+</div>
+{% endblock %}
