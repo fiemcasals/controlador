@@ -1,111 +1,116 @@
-// static/core/js/logger.js
-// Módulo para grabar y reproducir recorridos usando tus endpoints de /api/recorridos/*
+// static/core/js/logger.js                                 // Ruta del archivo (útil para debugging)
+// Módulo para grabar y reproducir recorridos usando tus endpoints de /api/recorridos/*   // Descripción
+
+import { obstaculoAlFrente } from "./seguridad.js";
+
+                                 // Intervalo mínimo entre envíos para evitar saturar el servidor
+
+function _getCsrf() {                                       // Función opcional para obtener token CSRF (por si quitas csrf_exempt)
+  const el = document.querySelector('meta[name="csrf-token"]'); // Busca meta tag con CSRF
+  return el ? el.getAttribute('content') : '';              // Devuelve el token o string vacío si no existe
+}
+
+async function _post(url, payload) {                        // Función interna para hacer POST al servidor
+  const res = await fetch(url, {                            // Llamada HTTP con fetch
+    method: 'POST',                                         // Método POST
+    headers: {
+      'Content-Type': 'application/json',                   // Indicamos JSON
+      // 'X-CSRFToken': _getCsrf(),                         // Línea opcional si activas CSRF
+    },
+    body: JSON.stringify(payload || {})                     // Convertimos el objeto en JSON
+  });
+  return await res.json();                                  // Devolvemos la respuesta parseada como JSON
+}
+
+async function _get(url) {                                  // Función interna para hacer GET al servidor
+  const res = await fetch(url);                             // Llamada GET simple
+  return await res.json();                                  // Parseamos y retornamos JSON
+}
+
+// ---- API pública ----                                     // Hasta acá era interno; ahora vienen funciones exportadas
+
+export async function startRecording(name) {                // Inicia una grabación con un nombre dado
+  if (!name || !name.trim()) return { ok: false, error: 'name vacío' }; // Validamos que tenga nombre
+  const r = await _post('/api/recorridos/start/', { name: name.trim() }); // Enviamos el nombre al endpoint de inicio
+  if (r.ok) _recording = true;                              // Si responde ok, marcamos que estamos grabando
+  return r;                                                 // Devolvemos la respuesta del servidor
+}
+
+export async function stopRecording() {                     // Finaliza grabación activa
+  const r = await _post('/api/recorridos/stop/', {});       // Llama al endpoint de stop
+  if (r.ok) _recording = false;                             // Si finaliza bien, desactivamos flag
+  return r;                                                 // Retornamos estado
+}
+
+export function isRecording() {                             // Función auxiliar para consultar estado externo
+  return _recording;                                        // Devuelve true/false si se está grabando
+}
 
 let _recording = false;
-let _lastPostTs = 0;           // para rate-limit de /point
-const POST_EVERY_MS = 100;     // no spamear al servidor
+// _lastPostTs y POST_EVERY_MS ya no se usan
 
-function _getCsrf() {
-  // Para llamadas no-exentas; tus vistas están csrf_exempt, pero lo dejo por si migrás
-  const el = document.querySelector('meta[name="csrf-token"]');
-  return el ? el.getAttribute('content') : '';
-}
-
-async function _post(url, payload) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // 'X-CSRFToken': _getCsrf(), // si quitás csrf_exempt
-    },
-    body: JSON.stringify(payload || {})
-  });
-  return await res.json();
-}
-
-async function _get(url) {
-  const res = await fetch(url);
-  return await res.json();
-}
-
-// ---- API pública ----
-
-export async function startRecording(name) {
-  if (!name || !name.trim()) return { ok: false, error: 'name vacío' };
-  const r = await _post('/api/recorridos/start/', { name: name.trim() });
-  if (r.ok) _recording = true;
-  return r;
-}
-
-
-export async function stopRecording() {
-  const r = await _post('/api/recorridos/stop/', {});
-  if (r.ok) _recording = false;
-  return r;
-}
-
-export function isRecording() {
-  return _recording;
-}
-
-/**
- * Llamala cada vez que envíes un paquete al auto.
- * Hace POST /api/recorridos/point (throttleado).
- * payload puede tener: {angle, ac, en} u otros campos; se agrega _ts en el server.
- */
 export async function logPoint(payload) {
+  // Solo guarda si se está grabando, sin más filtros de tiempo
   if (!_recording) return;
-  const now = performance.now();
-  if (now - _lastPostTs < POST_EVERY_MS) return; // throttle
-  _lastPostTs = now;
+
   try {
-    await _post('/api/recorridos/point', payload || {});
+    await _post("/api/recorridos/point", payload || {});
   } catch (e) {
-    // silencioso; no frenamos el control por un fallo de log
+    // No frenamos el control por un fallo de log
   }
 }
 
-export async function listTrajectories() {
-  const js = await _get('/api/recorridos/');
-  // normalizar estructura por si agregás ORM a futuro
-  if (!js.ok) return { ok: false, items: [] };
-  return js;
+
+export async function listTrajectories() {                 // Lista los recorridos existentes
+  const js = await _get('/api/recorridos/');                // GET al endpoint
+  if (!js.ok) return { ok: false, items: [] };              // Si algo falla devolvemos respuesta vacía controlada
+  return js;                                                // Retornamos el JSON normalizado
 }
 
 /**
- * Reproduce un recorrido ID: descarga puntos y llama a sendFn(punto) con timing.
- * - sendFn: función que debería hacer tu webSocket.send(JSON.stringify(...))
- * - opts:
- *    {intervalMs} fijo entre puntos, si NO querés respetar timestamps
- *    {respectTimestamps} si true, usa diferencias de _ts grabadas (en segundos)
+ * Reproduce un recorrido ID: descarga puntos y llama sendFn(punto) con timing.   // Comentario largo explicativo
+ * - sendFn: función que debería hacer tu webSocket.send(JSON.stringify(...))     // Explica argumento
+ * - opts:                                                                         // Explica configuración
+ *    {intervalMs} fijo entre puntos, si NO querés respetar timestamps            // Modo simple
+ *    {respectTimestamps} si true, usa diferencias reales grabadas                // Modo realista
  */
-export async function replayTrajectory(trajId, sendFn, opts = {}) {
-  const { intervalMs = 80, respectTimestamps = true } = opts;
-  const resp = await _get(`/api/recorridos/${trajId}/points`);
-  if (!resp.ok) return { ok: false, error: resp.error || 'sin puntos' };
+export async function replayTrajectory(trajId, sendFn, opts = {}) {   // Función para replay
+  const { intervalMs = 80, respectTimestamps = true } = opts;         // Valores por defecto de opciones
+  const resp = await _get(`/api/recorridos/${trajId}/points`);        // Descarga puntos de ese recorrido
+  if (!resp.ok) return { ok: false, error: resp.error || 'sin puntos' }; // Si falla, devolvemos error
 
-  const pts = resp.points || [];
-  if (pts.length === 0) return { ok: false, error: 'recorrido vacío' };
+  const pts = resp.points || [];                                      // Lista de puntos
+  if (pts.length === 0) return { ok: false, error: 'recorrido vacío' }; // Nada que reproducir
 
-  // calcular deltas en ms usando _ts (unix seg)
-  let prevTs = pts[0]._ts || null;
-  for (let i = 0; i < pts.length; i++) {
-    const p = { ...pts[i] };
-    // limpiamos campos internos si hiciera falta
-    delete p._ts;
+  let prevTs = pts[0]._ts || null;                                    // Guardamos timestamp inicial para diferencias
 
-    await sendFn(p);
+  for (let i = 0; i < pts.length; i++) {                              // Recorrido punto por punto
+    const p = { ...pts[i] };                                          // Copiamos punto para no modificar original
+    delete p._ts;                                                     // Quitamos campo interno timestamp
 
-    if (i < pts.length - 1) {
-      let waitMs = intervalMs;
-      if (respectTimestamps && prevTs != null) {
-        const nextTs = pts[i + 1]._ts || prevTs;
-        const deltaSec = Math.max(0, nextTs - prevTs);
-        waitMs = Math.min(1000, Math.max(5, deltaSec * 1000)); // límites sanos
-        prevTs = nextTs;
+        // --- NUEVO: si hay persona al frente, pausar aquí ---
+    if (typeof obstaculoAlFrente === "function") {
+      while (obstaculoAlFrente()) {
+        // Esperamos 100 ms y volvemos a chequear
+        await new Promise((r) => setTimeout(r, 100));
       }
-      await new Promise(r => setTimeout(r, waitMs));
+    }
+    // ----------------------------------------------------
+    await sendFn(p);       // Enviamos punto al servidor/control (websocket)
+
+    if (i < pts.length - 1) {                                         // Si no es el último punto calculamos espera
+      let waitMs = intervalMs;                                        // Base fija
+
+      if (respectTimestamps && prevTs != null) {                      // Si queremos respetar tiempos reales
+        const nextTs = pts[i + 1]._ts || prevTs;                      // Timestamp siguiente o repetimos
+        const deltaSec = Math.max(0, nextTs - prevTs);                // Diferencia en segundos (nunca negativa)
+        waitMs = Math.min(1000, Math.max(5, deltaSec * 1000));        // Limitar entre 5ms y 1000ms
+        prevTs = nextTs;                                              // Actualizar referencia
+      }
+
+      await new Promise(r => setTimeout(r, waitMs));                  // Espera simulada (mismo ritmo del recorrido original)
     }
   }
-  return { ok: true, count: pts.length };
+
+  return { ok: true, count: pts.length };                             // Replay finalizado correctamente
 }

@@ -1,210 +1,168 @@
-// static/core/js/recorder.ui.js
+// static/core/js/recorder.ui.js                                                // Ruta del archivo (utilidad para debugging)
 // -----------------------------------------------------------------------------
-// UI para grabar y reproducir recorridos (botones + <select>).
-// - NO usa prompt para pedir nombre.
-// - Genera nombres automáticos: "Recorrido 1", "Recorrido 2", ...
-// - Para el replay, no habla directo con el WebSocket:
-//   emite eventos "joystick:replay-point" y otro módulo (ws.helpers.js)
-//   se encarga de mandarlos por el WebSocket.
+// UI para grabar y reproducir recorridos (botones + <select>).                  // Descripción funcional
+// - NO usa prompt para pedir nombre.                                           // Aclaración
+// - Genera nombres automáticos: "Recorrido 1", "Recorrido 2", ...              // Lógica automática de nombres
+// - Para el replay, no habla directo con el WebSocket:                         // Diseño modular
+//   emite eventos "joystick:replay-point" y otro módulo (ws.helpers.js)        // Comunicación indirecta
+//   se encarga de mandarlos por el WebSocket.                                  // Delegación de responsabilidades
 // -----------------------------------------------------------------------------
 
-// Importamos funciones del módulo de lógica de grabación logger.js
+// Importamos funciones del módulo de lógica de grabación logger.js            // Importación de API interna
 import {
-  startRecording,      // inicia grabación en el backend
-  stopRecording,       // detiene la grabación actual en el backend
-  isRecording,         // indica si estamos grabando (true/false)
-  listTrajectories,    // lista de recorridos guardados en el backend
-  replayTrajectory,    // reproduce un recorrido punto por punto
+  startRecording,      // Función para iniciar una grabación en el backend
+  stopRecording,       // Función para detener grabación activa
+  isRecording,         // Función para saber si estamos grabando (booleano)
+  listTrajectories,    // Función para obtener lista de recorridos guardados
+  replayTrajectory,    // Función que reproduce un recorrido punto a punto
 } from "./logger.js";
 
-import { sendPayload } from "./ws.client.js";
+import { updateControlState } from "./ws.client.js"; // Importa función que envía datos al WebSocket durante replay
 
-// Función de ayuda: buscar un elemento por id en el DOM
+// Función simplificada para buscar elementos por ID
 function byId(id) {
-  // document.getElementById devuelve el elemento o null si no existe
-  return document.getElementById(id);
+  return document.getElementById(id);  // Retorna el elemento o null si no existe
 }
 
-// Ejecutamos este código cuando el DOM ya está listo
+// Esperamos a que el DOM cargue antes de manipular elementos
 window.addEventListener("DOMContentLoaded", () => {
+
   // ---------------------------------------------------------------------------
   // 1) Referencias a elementos del HTML
   // ---------------------------------------------------------------------------
 
-  // Botón "Grabar"
-  const btnStartRec = byId("btnStartRec");
-  // Botón "Detener"
-  const btnStopRec = byId("btnStopRec");
-  // Botón "Reproducir"
-  const btnReplay = byId("btnReplay");
-  // <select> que contiene la lista de recorridos
-  const recorridoSelect = byId("recorridoSelect");
+  const btnStartRec = byId("btnStartRec");        // Botón "Grabar"
+  const btnStopRec = byId("btnStopRec");          // Botón "Detener"
+  const btnReplay = byId("btnReplay");            // Botón "Reproducir"
+  const recorridoSelect = byId("recorridoSelect"); // Select donde se listan recorridos guardados
 
-  // Contador interno para generar nombres automáticos de recorridos
-  // Ejemplo: "Recorrido 1", "Recorrido 2", etc.
-  let autoRecCounter = 1;
+  let autoRecCounter = 1;                         // Contador usado para generar nombres automáticos
 
   // ---------------------------------------------------------------------------
-  // 2) Función para actualizar el estado de los botones según isRecording()
+  // 2) Actualiza los botones segun el estado "recording"
   // ---------------------------------------------------------------------------
   function updateRecButtons() {
-    // Si faltan los botones, salimos
-    if (!btnStartRec || !btnStopRec) return;
+    if (!btnStartRec || !btnStopRec) return;      // Si botones no existen → salir
 
-    // Si logger.js indica que estamos grabando...
-    if (isRecording()) {
-      // no permitimos iniciar otra grabación
-      btnStartRec.disabled = true;
-      // pero sí permitir detener
-      btnStopRec.disabled = false;
-    } else {
-      // si NO estamos grabando, habilitamos "Grabar"
-      btnStartRec.disabled = false;
-      // y bloqueamos "Detener" (no hay nada que detener)
-      btnStopRec.disabled = true;
+    if (isRecording()) {                          // Si estamos grabando...
+      btnStartRec.disabled = true;                // Bloqueamos iniciar (ya está)
+      btnStopRec.disabled = false;                // Habilitamos detener
+    } else {                                      // Si NO estamos grabando...
+      btnStartRec.disabled = false;               // Se puede iniciar grabación
+      btnStopRec.disabled = true;                // No se puede detener nada
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 3) Función para pedir al backend la lista de recorridos y llenar el <select>
+  // 3) Obtiene lista de recorridos desde backend y llena el <select>
   // ---------------------------------------------------------------------------
   async function refreshTrajectories() {
-    // Si el <select> no existe, no hacemos nada
-    if (!recorridoSelect) return;
+    if (!recorridoSelect) return;                 // Si no existe select, no hacemos nada
 
-    // Dejamos una opción por defecto
-    recorridoSelect.innerHTML = `<option value="">Seleccioná un recorrido…</option>`;
+    recorridoSelect.innerHTML = `<option value="">Seleccioná un recorrido…</option>`;  // Limpia y deja opción inicial
 
-    // Pedimos los recorridos al backend
-    const resp = await listTrajectories();
+    const resp = await listTrajectories();        // Llama al backend
     console.log("[recorder.ui] listTrajectories:", resp);
 
-    // Si la respuesta no es OK, cortamos
-    if (!resp.ok) return;
+    if (!resp.ok) return;                         // Si backend responde error → salir
 
-    // Recorremos la lista de items (recorridos)
-    (resp.items || []).forEach((r) => {
-      // Creamos una opción <option> para el <select>
-      const opt = document.createElement("option");
-      // id numérico del recorrido
-      opt.value = r.id;
-      // texto visible: nombre, o "Recorrido #id" si no trae nombre
-      opt.textContent = r.name || `Recorrido #${r.id}`;
-      // agregamos la opción al <select>
-      recorridoSelect.appendChild(opt);
+    (resp.items || []).forEach((r) => {           // Iteramos recorridos obtenidos
+      const opt = document.createElement("option");// Creamos <option>
+      opt.value = r.id;                           // ID interno
+      opt.textContent = r.name || `Recorrido #${r.id}`; // Texto visible
+      recorridoSelect.appendChild(opt);           // Lo agregamos al select
     });
   }
 
   // ---------------------------------------------------------------------------
-  // 4) Función para iniciar una nueva grabación (handleStart)
+  // 4) Inicia grabación con nombre automático
   // ---------------------------------------------------------------------------
   async function handleStart() {
-    // Si ya estamos grabando, ignoramos el intento
-    if (isRecording()) {
+    if (isRecording()) {                          // Si ya está grabando, ignoramos
       console.warn("[recorder.ui] Ya está grabando, se ignora el nuevo start.");
       return;
     }
 
-    // Generamos un nombre automático: "Recorrido 1", "Recorrido 2", ...
-    const name = `Recorrido ${autoRecCounter++}`;
-    console.log("[recorder.ui] startRecording con nombre automático:", name);
+    const name = `Recorrido ${autoRecCounter++}`; // Creamos nombre automático
+    console.log("[recorder.ui] startRecording con nombre:", name);
 
-    // Llamamos a logger.js para iniciar la grabación en el backend
-    const resp = await startRecording(name);
-    console.log("[recorder.ui] startRecording respuesta:", resp);
+    const resp = await startRecording(name);      // Llamamos a logger.js para iniciar grabación
+    console.log("[recorder.ui] respuesta:", resp);
 
-    // Si algo salió mal, avisamos al usuario
-    if (!resp.ok) {
+    if (!resp.ok) {                               // Si error → informar usuario
       alert("Error al iniciar la grabación.");
       return;
     }
 
-    // Actualizamos el estado de los botones (Grabar/Detener)
-    updateRecButtons();
-
-    console.log(`🎥 Grabando: ${name}`);
+    updateRecButtons();                           // Refrescamos estado UI
+    console.log(`🎥 Grabando: ${name}`);          // Log informativo
   }
 
   // ---------------------------------------------------------------------------
-  // 5) Función para detener la grabación actual (handleStop)
+  // 5) Detener grabación actual
   // ---------------------------------------------------------------------------
   async function handleStop() {
     try {
-      // Pedimos al backend que detenga la grabación
-      const resp = await stopRecording();
-      console.log("[recorder.ui] stopRecording respuesta:", resp);
+      const resp = await stopRecording();         // Pedimos backend que detenga grabación
+      console.log("[recorder.ui] stop:", resp);
 
-      // Si hubo error, avisamos
-      if (!resp.ok) {
+      if (!resp.ok) {                             // Validación error
         alert("Error al detener.");
         return;
       }
 
-      // Ya no estamos grabando → actualizar botones
-      updateRecButtons();
-      // Recargar la lista de recorridos (para que aparezca el nuevo)
-      await refreshTrajectories();
+      updateRecButtons();                         // Actualiza botones
+      await refreshTrajectories();                // Recarga lista incluyendo la nueva grabación
 
-      console.log("⏹ Grabación detenida.");
+      console.log("⏹ Grabación detenida.");       // Log visual
     } catch (err) {
-      // Si algo raro revienta el try, lo mostramos en consola
-      console.error("[recorder.ui] Error en handleStop:", err);
-      // y avisamos con un alert genérico
+      console.error("[recorder.ui] ERROR:", err); // Error inesperado
       alert("Error inesperado al detener la grabación.");
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 6) Función para reproducir el recorrido seleccionado (handleReplay)
+  // 6) Reproducir recorrido seleccionado
   // ---------------------------------------------------------------------------
-async function handleReplay() {
-  if (!recorridoSelect) return;
+  async function handleReplay() {
+    if (!recorridoSelect) return;                 // Si select no existe → salir
 
-  const id = recorridoSelect.value;
-  if (!id) {
-    alert("Seleccioná un recorrido.");
-    return;
-  }
-
-  const resp = await replayTrajectory(
-    id,
-    (pt) => {
-      // Reutilizamos el mismo camino que el joystick manual:
-      //  - manda al WS
-      //  - llama a logPoint (aunque si no está grabando, logger lo ignora)
-      sendPayload(pt, 200);
-    },
-    {
-      respectTimestamps: false,
-      intervalMs: 200,
+    const id = recorridoSelect.value;             // Obtenemos ID seleccionado
+    if (!id) {                                    // Validación
+      alert("Seleccioná un recorrido.");
+      return;
     }
-  );
 
-  console.log("[recorder.ui] replayTrajectory:", resp);
+    const resp = await replayTrajectory(          // Llamamos a logger.js para reproducción
+      id,
+      (pt) => {                                   // Función callback por cada punto
+        updateControlState(pt);                     // Reenvía al WebSocket (simula joystick real)
+      },
+      {
+        respectTimestamps: false,                 // No usa tiempo real original
+        intervalMs: 80,                          // Intervalo fijo entre puntos
+      }
+    );
 
-  if (resp.ok) {
-    console.log(`⏪ Reproducción completa (${resp.count} puntos).`);
-  } else {
-    alert(`Error reproduciendo: ${resp.error}`);
+    console.log("[recorder.ui] replay:", resp);
+
+    if (resp.ok) {                                // Finalizado correctamente
+      console.log(`⏪ Reproducción completa (${resp.count} puntos).`);
+    } else {
+      alert(`Error reproduciendo: ${resp.error}`);// Error → aviso
+    }
   }
-}
-
 
   // ---------------------------------------------------------------------------
-  // 7) Enlazar eventos a los botones (si existen)
+  // 7) Conectar botones a sus handlers
   // ---------------------------------------------------------------------------
-
-  // Click en "Grabar" → handleStart
   if (btnStartRec) {
     btnStartRec.addEventListener("click", (ev) => {
-      // prevenimos comportamiento por defecto (por ejemplo submit de form)
-      ev.preventDefault();
-      // ejecutamos la lógica de inicio de grabación
-      handleStart();
+      ev.preventDefault();                        // Previene submit accidental
+      handleStart();                              // Ejecuta función
     });
   }
 
-  // Click en "Detener" → handleStop
   if (btnStopRec) {
     btnStopRec.addEventListener("click", (ev) => {
       ev.preventDefault();
@@ -212,7 +170,6 @@ async function handleReplay() {
     });
   }
 
-  // Click en "Reproducir" → handleReplay
   if (btnReplay) {
     btnReplay.addEventListener("click", (ev) => {
       ev.preventDefault();
@@ -221,11 +178,9 @@ async function handleReplay() {
   }
 
   // ---------------------------------------------------------------------------
-  // 8) Inicialización al cargar el módulo
+  // 8) Inicialización visual al cargar
   // ---------------------------------------------------------------------------
 
-  // Ajustamos botones según si ya se estaba grabando o no
-  updateRecButtons();
-  // Cargamos la lista de recorridos existentes desde el backend
-  refreshTrajectories();
+  updateRecButtons();                             // Ajusta UI según estado actual
+  refreshTrajectories();                          // Carga lista de recorridos existentes
 });

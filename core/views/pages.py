@@ -1,17 +1,18 @@
-
+# core/views/pages.py
 from django.views.decorators.gzip import gzip_page
-from django.views.decorators.http import require_GET   
+from django.views.decorators.http import require_GET
 import time
+import requests
 from django.conf import settings
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect
 from django.utils.timezone import now
-from django.http import StreamingHttpResponse
-
+from django.urls import reverse
 
 from ..forms import RegisterForm
+from .camera import STEREO_BASE_URL
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -44,7 +45,7 @@ def controlador(request: HttpRequest) -> HttpResponse:
         "core/controlador.html",
         {
             "timestamp": now().timestamp(),
-            "vehicle_ws_url": settings.VEHICLE_WS_URL,
+            "vehicle_ws_url": getattr(settings, "VEHICLE_WS_URL", ""),
         },
     )
 
@@ -56,7 +57,7 @@ def controlador_embed(request: HttpRequest) -> HttpResponse:
         "core/joystick.html",
         {
             "timestamp": now().timestamp(),
-            "vehicle_ws_url": settings.VEHICLE_WS_URL,
+            "vehicle_ws_url": getattr(settings, "VEHICLE_WS_URL", ""),
         },
     )
 
@@ -67,21 +68,21 @@ def mix_view(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def camara_grid(request):
+def camara_grid(request: HttpRequest) -> HttpResponse:
     """
     Página HTML que muestra la vista GRID del stereo (líneas horizontales).
     """
-    grid_url = reverse("video_grid")  # apunta a /video_grid/
-    return render(request, "core/camara_grid.html", {"grid_url": grid_url})
+    return render(request, "core/camara_grid.html")
 
 
 @login_required
-def camara_depth(request):
+def camara_depth(request: HttpRequest) -> HttpResponse:
     """
     Página HTML que muestra el mapa de profundidad.
     """
-    depth_url = reverse("video_depth")  # apunta a /video_depth/
-    return render(request, "core/camara_depth.html", {"depth_url": depth_url})
+    return render(request, "core/camara_depth.html")
+
+
 @login_required
 def sensores(request: HttpRequest) -> HttpResponse:
     """
@@ -94,14 +95,11 @@ def sensores(request: HttpRequest) -> HttpResponse:
 def api_sensores(request: HttpRequest) -> JsonResponse:
     """
     API JSON sencilla para entregar los sensores al frontend.
-    Por ahora datos dummy; después conectalo a tus fuentes reales:
-    IMU, GPS, diccionario 'datos', etc.
     """
-    # TODO: reemplazar por valores reales
     dummy = {
         "roll": 1.23,
         "pitch": -0.5,
-        "yaw": 45.0,  # heading en grados
+        "yaw": 45.0,
 
         "ax": 0.01,
         "ay": -0.02,
@@ -110,18 +108,21 @@ def api_sensores(request: HttpRequest) -> JsonResponse:
         "lat": -34.5743,
         "lon": -58.4359,
         "alt": 25.0,
-        "rumbo": 45.0,  # podés usar tu cálculo de rumbo deseado/actual
+        "rumbo": 45.0,
         "ts": time.time(),
     }
     return JsonResponse(dummy)
 
+
+# ================== FEEDS GRID / DEPTH / DETECT ==================
 
 @gzip_page
 @require_GET
 @login_required
 def stereo_grid_feed(request: HttpRequest) -> StreamingHttpResponse:
     """
-    Stream MJPEG del endpoint /grid del contenedor stereo.
+    Stream MJPEG armado a partir de /grid del contenedor stereo.
+    /grid devuelve 1 JPEG por request → acá hacemos polling.
     """
     remote_url = f"{STEREO_BASE_URL}/grid"
     return StreamingHttpResponse(
@@ -135,7 +136,7 @@ def stereo_grid_feed(request: HttpRequest) -> StreamingHttpResponse:
 @login_required
 def stereo_depth_feed(request: HttpRequest) -> StreamingHttpResponse:
     """
-    Stream MJPEG del endpoint /preview (mapa de profundidad coloreado).
+    Stream MJPEG armado a partir de /preview (mapa de profundidad coloreado).
     """
     remote_url = f"{STEREO_BASE_URL}/preview"
     return StreamingHttpResponse(
@@ -160,4 +161,6 @@ def stereo_detect(request: HttpRequest) -> JsonResponse:
             status=502,
         )
 
-
+@login_required
+def camara_foto(request: HttpRequest) -> HttpResponse:
+    return render(request, "core/camara_foto.html")

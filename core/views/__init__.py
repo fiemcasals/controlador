@@ -1,5 +1,3 @@
-# core/views/__init__.py
-
 from .pages import (
     home,
     register,
@@ -12,7 +10,15 @@ from .pages import (
     sensores,
     api_sensores,
 )
-from .camera import video_feed, object_detection_feed, deteccion
+
+from .camera import (
+    video_feed,
+    object_detection_feed,
+    mono_snapshot,
+    stream_page,
+    deteccion,
+)
+
 from .recorridos import (
     recorridos_page,
     api_recorridos_start,
@@ -20,6 +26,15 @@ from .recorridos import (
     api_recorridos_list,
     api_recorridos_points,
     api_recorridos_point,
+)
+
+from .api import (
+    api_estado_persona,
+)
+
+from .detection_state import (
+    set_persona_al_frente,
+    get_persona_al_frente,
 )
 
 __all__ = [
@@ -38,6 +53,8 @@ __all__ = [
     # camera
     "video_feed",
     "object_detection_feed",
+    "mono_snapshot",
+    "stream_page",
     "deteccion",
 
     # recorridos
@@ -47,4 +64,11 @@ __all__ = [
     "api_recorridos_list",
     "api_recorridos_points",
     "api_recorridos_point",
+
+    # api
+    "api_estado_persona",
+
+    # detection_state
+    "set_persona_al_frente",
+    "get_persona_al_frente",
 ]

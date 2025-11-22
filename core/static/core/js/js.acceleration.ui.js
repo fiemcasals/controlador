@@ -2,33 +2,34 @@
 // Barra de aceleración + botones de escala (baja, media, alta).
 
 import { obstaculoAlFrente } from "./seguridad.js";
-import { sendPayload } from "./ws.client.js";
+import { updateControlState  } from "./ws.client.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const byId = (id) => document.getElementById(id);
 
-  const slider = byId("slider");
-  const barra = byId("barra");
-  const valueElement = byId("value");
+  const slider = byId("slider");      // barra interna
+  const barra  = byId("barra");       // contenedor táctil
+  const valueElement = byId("value"); // texto porcentaje
 
-  // Escala inicial: alta (1.0) para que, si no tocan botones, algo acelere
+  // Escala inicial: alta (1.0)
   let fondoEscala = 1.0;
+
   let isAcelerando = false;
-  let accelTimer = null;   // timer que reenvía mientras está presionado
+  let accelTimer = null;
+  let accelTouchId = null; // ← identificador del dedo que controla la barra
 
   const _Acelerar = { ac: 0 };
 
   function enviarAceleracion() {
     if (!isAcelerando) return;
-    if (obstaculoAlFrente()) return;
+    if (obstaculoAlFrente()) return; // no avanzar si hay persona
 
-    // Mandamos con un throttle interno de ws.client.js (ej: 50ms)
-    sendPayload(_Acelerar, 50);
+    updateControlState({ ac: _Acelerar.ac });
   }
 
   function startAccelTimer() {
-    if (accelTimer !== null) return;  // ya está corriendo
-    accelTimer = setInterval(enviarAceleracion, 100); // cada 100 ms
+    if (accelTimer !== null) return;
+    accelTimer = setInterval(enviarAceleracion, 50);
   }
 
   function stopAccelTimer() {
@@ -38,69 +39,105 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Busca el touch con el identificador que nos interesa
+  function findTouchById(ev, id) {
+    if (!ev.touches || ev.touches.length === 0) return null;
+    if (id == null) return ev.touches[0];
+
+    for (let i = 0; i < ev.touches.length; i++) {
+      const t = ev.touches[i];
+      if (t.identifier === id) return t;
+    }
+    // Si no lo encontramos, devolvemos el primero para no reventar
+    return ev.touches[0];
+  }
+
   function acelerar(ev) {
     if (!isAcelerando || !barra || !slider || !valueElement) return;
 
     const rect = barra.getBoundingClientRect();
-    const t0 = ev.touches && ev.touches[0] ? ev.touches[0] : null;
-    if (!t0) return;
+    const touch = findTouchById(ev, accelTouchId);
+    if (!touch) return;
 
-    let value = ((rect.bottom - t0.clientY) / rect.height) * 100;
+    let value =
+      ((rect.bottom - touch.clientY) / rect.height) * 100;
+
     if (value > 100) value = 100;
     if (value < 0) value = 0;
 
-    console.log("valor de aceleracion UI (0..100): ", value);
+    //console.log("valor de aceleracion UI (0..100): ", value);
 
     _Acelerar.ac = value * fondoEscala;
-    console.log("ac (con escala): ", _Acelerar.ac);
+    //console.log("ac (con escala): ", _Acelerar.ac);
 
     slider.style.height = value + "%";
     slider.style.transition = "0.1s";
+
     valueElement.textContent = Math.round(value) + "%";
 
-    // Enviamos una vez para reacción rápida
     if (!obstaculoAlFrente()) {
-      sendPayload(_Acelerar, 50);
+      updateControlState(_Acelerar);
     }
   }
 
   function startAcelerar(ev) {
+    if (!barra) return;
+
     isAcelerando = true;
     ev.preventDefault();
 
-    // Por si el usuario toca pero no mueve el dedo: arrancamos el timer
+    const t0 =
+      (ev.changedTouches && ev.changedTouches[0]) ||
+      (ev.touches && ev.touches[0]) ||
+      null;
+
+    accelTouchId = t0 ? t0.identifier : null;
+
     startAccelTimer();
+    if (t0) {
+      // Ajustamos una vez inicial
+      acelerar(ev);
+    }
   }
 
-  function stopAcelerar() {
+  function stopAcelerar(ev) {
     isAcelerando = false;
+    accelTouchId = null;
     stopAccelTimer();
 
     if (valueElement) valueElement.textContent = "0%";
     if (slider) slider.style.height = "0%";
 
     _Acelerar.ac = 0;
-    // Mandamos ac=0 para que el auto "suelte el acelerador"
-    sendPayload(_Acelerar, 50);
+    updateControlState({ ac: _Acelerar.ac });
   }
 
   if (barra) {
-    barra.addEventListener("touchstart", startAcelerar, { passive: false });
-    barra.addEventListener("touchmove", acelerar, { passive: false });
+    barra.addEventListener("touchstart", startAcelerar, {
+      passive: false,
+    });
+    barra.addEventListener("touchmove", acelerar, {
+      passive: false,
+    });
     barra.addEventListener("touchend", stopAcelerar);
     barra.addEventListener("touchcancel", stopAcelerar);
   }
 
-  // ---- Botones de escala ----
-  const B_baja = byId("B_baja");
+  // Botones de escala
+  const B_baja  = byId("B_baja");
   const B_media = byId("B_media");
-  const B_alta = byId("B_alta");
+  const B_alta  = byId("B_alta");
 
-  // Helper para setear colores
   function setEscalaButtons(activa) {
-    if (B_baja)  B_baja.style.backgroundColor  = (activa === "baja"  ? "rgb(0, 255, 8)" : "#f00");
-    if (B_media) B_media.style.backgroundColor = (activa === "media" ? "rgb(0, 255, 8)" : "#f00");
-    if (B_alta)  B_alta.style.backgroundColor  = (activa === "alta"  ? "rgb(0, 255, 8)" : "#f00");
+    if (B_baja)
+      B_baja.style.backgroundColor =
+        activa === "baja" ? "rgb(0, 255, 8)" : "#f00";
+    if (B_media)
+      B_media.style.backgroundColor =
+        activa === "media" ? "rgb(0, 255, 8)" : "#f00";
+    if (B_alta)
+      B_alta.style.backgroundColor =
+        activa === "alta" ? "rgb(0, 255, 8)" : "#f00";
   }
 
   if (B_baja) {
@@ -109,12 +146,14 @@ window.addEventListener("DOMContentLoaded", () => {
       setEscalaButtons("baja");
     });
   }
+
   if (B_media) {
     B_media.addEventListener("click", () => {
       fondoEscala = 0.6;
       setEscalaButtons("media");
     });
   }
+
   if (B_alta) {
     B_alta.addEventListener("click", () => {
       fondoEscala = 1.0;
@@ -122,6 +161,5 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Estado inicial: alta seleccionada
   setEscalaButtons("alta");
 });

@@ -1,4 +1,3 @@
-<!--camara_depth.html-->
 {% extends "core/base.html" %}
 {% load static %}
 
@@ -6,12 +5,12 @@
 <link rel="stylesheet" href="{% static 'core/css/camara.css' %}">
 
 <div class="camara-page">
-  <h1>Cámara - Mapa de profundidad</h1>
+  <h1>Cámara - Vista Remota</h1>
 
   <div class="camara-frame">
-  <img src="{% url 'video_depth' %}" alt="Mapa de profundidad">
-</div>
+    <img src="{% url 'video_feed' %}" alt="Cámara en vivo">
+  </div>
 
- 
+  <a href="{% url 'home' %}" class="btn btn-secondary">Volver</a>
 </div>
 {% endblock %}

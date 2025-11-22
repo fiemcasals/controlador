@@ -111,7 +111,8 @@ LOGOUT_REDIRECT_URL = '/'      # al cerrar sesión, vuelve al inicio
 
 
 #1.1
-VEHICLE_WS_URL = "ws://192.168.4.1:80/ws"
+VEHICLE_WS_URL = "ws://127.0.0.1:8000/ws"
+#VEHICLE_WS_URL = "ws://192.168.4.1:80/ws"->microcontrolador
 #O si tu firmware escucha WebSocket en / sin ruta extra: VEHICLE_WS_URL = "ws://192.168.4.1:80"
 VEHICLE_WS_CONNECT_TIMEOUT = 5
 # A DÓNDE enviar los comandos (la IP/PUERTO donde corre el monitor_udp.py)

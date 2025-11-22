@@ -12,4 +12,6 @@ urlpatterns = [
     path('controlador/', core_views.controlador, name='controlador'),
     path('mix/', core_views.mix_view, name='mix'),
     path("", include("core.urls")),  # incluye home y APIs
+    path("api/estado/persona/", core_views.api_estado_persona, name="api_estado_persona"),
+
 ]
