@@ -1,0 +1,201 @@
+/* static/core/css/monitor.css */
+
+/* --- Estilos de la estructura y navegación --- */
+
+body {
+  margin: 0; 
+  padding-top: 50px; 
+  background-color: #000;
+  color: #fff;
+}
+
+/* Barra de Navegación Simple: Fija en la esquina superior izquierda */
+.top-nav-monitor {
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem; 
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    box-sizing: border-box;
+}
+
+/* Botón "Menú" */
+.menu-button {
+    color: #9370DB; 
+    text-decoration: none;
+    padding: 0.3rem 0.6rem;
+    border: 1px solid #9370DB;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.menu-button:hover {
+    background-color: #9370DB;
+    color: #fff;
+}
+
+
+/* --- Estilos de la página Monitor (Ancho Completo y Colores Originales) --- */
+
+.monitor-page {
+  padding: 0 1.5rem 2rem 1.5rem;
+  /* Eliminamos max-width para que ocupe el total de la pantalla. */
+  width: 100%; 
+  box-sizing: border-box; /* Importante para que el padding no cause desbordamiento */
+  margin: 0 auto;
+}
+
+.monitor-page h1 {
+    margin-top: 0;
+    padding-top: 1.5rem; 
+    text-align: center;
+}
+.monitor-page p {
+    text-align: center;
+}
+
+/* Layout de las tarjetas: lado a lado */
+.monitor-layout {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 2rem; 
+  margin-top: 2rem;
+  justify-content: center; /* Centramos el grupo de tarjetas */
+  align-items: flex-start;
+}
+
+/* Cada tarjeta (Dirección / Aceleración) */
+.monitor-card {
+  background: #222;
+  border-radius: 12px;
+  padding: 2rem;
+  flex: 1 1 450px;
+  max-width: 550px; /* Mantenemos un max-width para que no crezcan demasiado en pantallas enormes */
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+/* Badges originales */
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  margin-right: 0.4rem;
+}
+.badge-angle { background: #294a8a; } /* Color original */
+.badge-ac    { background: #2b6f3c; } /* Color original */
+.badge-en    { background: #8a4a29; } /* Color original */
+
+/* Fila de valores */
+.monitor-values-row {
+  margin-top: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* ---------- Gauge de ángulo (Colores originales) ---------- */
+.monitor-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.monitor-gauge-circle {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 2px solid #444;
+  background: radial-gradient(circle at 30% 30%, #333, #111);
+  margin-bottom: 1rem;
+}
+
+.monitor-gauge-needle {
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  width: 2px;
+  height: 100px; 
+  background: #e74c3c; /* Color original rojo intenso */
+  transform-origin: bottom center;
+  transform: translateX(-50%) rotate(0deg);
+  transition: transform 0.15s ease-out;
+}
+
+/* ---------- Barra de aceleración (Colores originales) ---------- */
+.monitor-speed {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.monitor-speed-bar {
+  width: 60px;
+  height: 220px;
+  border-radius: 6px;
+  background: #333;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.monitor-speed-bar-fill {
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(to top, #1e8449, #2ecc71); /* Degradado verde original */
+  transition: height 0.15s ease-out;
+}
+
+/* Encendido */
+.monitor-en {
+  margin-top: 3rem; 
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.monitor-en-on {
+  color: #2ecc71; /* Color verde original */
+}
+
+.monitor-en-off {
+  color: #e74c3c; /* Color rojo original */
+}
+
+/* --------- Responsive: en pantallas más pequeñas, apilar tarjetas --------- */
+@media (max-width: 950px) {
+  .monitor-layout {
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .monitor-card {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 500px) {
+  .monitor-page {
+      padding: 0 1rem 1rem 1rem;
+  }
+  .monitor-gauge-circle {
+      width: 180px;
+      height: 180px;
+  }
+  .monitor-speed-bar {
+      height: 180px;
+  }
+  .top-nav-monitor {
+      padding: 0 1rem;
+  }
+}

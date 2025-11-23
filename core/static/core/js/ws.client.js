@@ -6,9 +6,10 @@ let webSocket = null;
 let lastSampleTs = 0;
 const SAMPLE_INTERVAL_MS = 80;
 
-// Estado de control "canónico": lo que realmente se manda / graba
+const ANGULO_NEUTRO = 90;  // ajustá al “recto” de tu protocolo
+
 let currentState = {
-  angle: null,
+  angle: ANGULO_NEUTRO,
   ac: 0,
   en: null,
 };
@@ -23,8 +24,8 @@ export function getWebSocket() {
   return webSocket;
 }
 
-// 🔹 Función interna: aplica gate y envía el snapshot
-function _sendCurrentState() {
+// 🔹 Función interna: aplica gate, envía al auto y al monitor
+async function _sendCurrentState() {
   const now = performance.now();
   if (now - lastSampleTs < SAMPLE_INTERVAL_MS) {
     return; // gate de tiempo
@@ -32,9 +33,10 @@ function _sendCurrentState() {
   lastSampleTs = now;
 
   const ws = webSocket;
-  const payload = { ...currentState };      // clon del estado actual
+  const payload = { ...currentState };
   const data = JSON.stringify(payload);
 
+  // 1) Enviar al microcontrolador por WebSocket
   if (ws && ws.readyState === WebSocket.OPEN) {
     try {
       ws.send(data);
@@ -43,14 +45,31 @@ function _sendCurrentState() {
     }
   }
 
+ 
+
+
+
+  // 2) Log para debug: solo los comandos "oficiales"
   console.log("[cmd]", data);
-  logPoint(payload); // guarda exactamente el mismo snapshot
+
+  // 3) Guardar en trayectoria (si está grabando)
+  logPoint(payload);
+
+  // 4) Enviar al monitor (via Django → UDP)
+  //    No esperamos la respuesta; es "fire and forget".
+  try {
+    fetch("/api/monitor/telemetry/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: data,
+      keepalive: true, // ayuda a que no se corte al cerrar pestaña
+    }).catch(() => {});
+  } catch (e) {
+    // no hacemos nada, la conducción no depende del monitor
+  }
 }
 
-/**
- * Esta es la API que deben usar joystick, acelerador y replay:
- * actualiza el estado parcial, y dispara el envío con gate de tiempo.
- */
+// API pública: joystick, acelerador y replay llaman a esto
 export function updateControlState(partial) {
   currentState = {
     ...currentState,

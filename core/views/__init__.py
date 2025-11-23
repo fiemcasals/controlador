@@ -37,6 +37,12 @@ from .detection_state import (
     get_persona_al_frente,
 )
 
+from .monitor import (
+    monitor_page,
+    monitor_stream,
+    monitor_telemetry,
+)
+
 __all__ = [
     # pages
     "home",
@@ -71,4 +77,19 @@ __all__ = [
     # detection_state
     "set_persona_al_frente",
     "get_persona_al_frente",
+
+    # monitor
+    "monitor_telemetry",
+    "monitor_page",
+    "monitor_stream",
 ]
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+LOGS = []  # in-memory (cada reload se limpia), luego se pasa a redis
+
+
+    

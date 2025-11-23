@@ -18,6 +18,13 @@ from .views.recorridos import (
     api_recorridos_point,
 )
 
+
+from core.views.monitor import (
+    monitor_page,
+    monitor_telemetry,
+    monitor_stream,
+)
+
 urlpatterns = [
     # Páginas principales
     path("", views.home, name="home"),
@@ -67,4 +74,10 @@ urlpatterns = [
 
     # Página simple de stream (opcional)
     path("vista/", stream_page, name="stream_page"),
+
+    # Para el monitor 
+
+    path("monitor/", monitor_page, name="monitor_page"),
+    path("api/monitor/telemetry/", monitor_telemetry, name="monitor_telemetry"),
+    path("api/monitor/stream/", monitor_stream, name="monitor_stream"),
 ]

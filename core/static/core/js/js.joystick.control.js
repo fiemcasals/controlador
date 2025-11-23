@@ -87,7 +87,22 @@ window.addEventListener("DOMContentLoaded", () => {
     const angleRad = Math.atan2(offsetY, offsetX);
     const angleDeg = angleRad * (180 / Math.PI);
 
-    angulo.angle = angleDeg * -1 - 17;
+    // --- CÁLCULO DE ÁNGULO MODIFICADO: 0° ARRIBA, CRECE HORARIO ---
+    
+    // 1. Sumar 90 grados: esto rota el 0° (que estaba a la derecha) hacia la parte superior.
+    //    Como el eje Y está invertido en la pantalla, esta suma hace que el ángulo aumente en sentido horario.
+    let adjustedAngle = angleDeg + 100; 
+
+    // 2. Ajustar al rango de 0 a 360 grados
+    adjustedAngle = adjustedAngle % 360;
+    if (adjustedAngle < 0) {
+        adjustedAngle += 360;
+    }
+
+    // 3. Aplicar el ajuste final de -17 grados
+    angulo.angle = adjustedAngle - 17;
+    
+    // --- FIN CÁLCULO DE ÁNGULO MODIFICADO ---
 
     const x = distance * Math.cos(angleRad);
     const y = distance * Math.sin(angleRad);

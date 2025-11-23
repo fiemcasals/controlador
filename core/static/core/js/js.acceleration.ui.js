@@ -100,17 +100,20 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function stopAcelerar(ev) {
-    isAcelerando = false;
-    accelTouchId = null;
-    stopAccelTimer();
+  function stopAcelerar() {
+  isAcelerando = false;
+  accelTouchId = null;
+  stopAccelTimer(); // ← frena interval
 
-    if (valueElement) valueElement.textContent = "0%";
-    if (slider) slider.style.height = "0%";
+  if (valueElement) valueElement.textContent = "0%";
+  if (slider) slider.style.height = "0%";
 
-    _Acelerar.ac = 0;
-    updateControlState({ ac: _Acelerar.ac });
-  }
+  _Acelerar.ac = 0;
+
+  // 🚨 frenar siempre, aunque haya obstáculo
+  updateControlState({ ac: 0 });
+}
+
 
   if (barra) {
     barra.addEventListener("touchstart", startAcelerar, {
@@ -163,3 +166,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
   setEscalaButtons("alta");
 });
+
+ws.onclose = () => {
+  console.warn("WS cerrado → freno de seguridad");
+  updateControlState({ ac: 0 });
+};
+
+window.addEventListener("blur", () => {
+  stopAcelerar();
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) stopAcelerar();
+});
+

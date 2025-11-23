@@ -1,0 +1,71 @@
+{# core/templates/core/monitor.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VAE Monitor</title>
+
+  <script>
+    console.log("VEHICLE_WS_URL desde Django:", "{{ vehicle_ws_url }}");
+    window.VEHICLE_WS_URL = "{{ vehicle_ws_url|default:''|escapejs }}";
+  </script>
+
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'core/css/layout.css' %}">
+  
+  <link rel="stylesheet" href="{% static 'core/css/monitor.css' %}">
+</head>
+
+<body>
+  <nav class="top-nav-monitor">
+    <a href="/" class="menu-button">Menú</a>
+  </nav>
+
+  <main>
+    <section class="monitor-page">
+      <h1>📡 Monitor de comandos VAE</h1>
+      <p>Visualización en tiempo real de ángulo, aceleración y estado de encendido.</p>
+
+      <div class="monitor-layout">
+        <div class="monitor-card">
+          <h2>Dirección</h2>
+          <div class="monitor-gauge">
+            <div class="monitor-gauge-circle">
+              <div id="angleNeedle" class="monitor-gauge-needle"></div>
+            </div>
+            <div class="monitor-values-row">
+              <span class="badge badge-angle">angle</span>
+              <span id="angleValue">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="monitor-card">
+          <h2>Aceleración</h2>
+          <div class="monitor-speed">
+            <div class="monitor-speed-bar">
+              <div id="acBarFill" class="monitor-speed-bar-fill"></div>
+            </div>
+            <div class="monitor-values-row">
+              <span class="badge badge-ac">ac</span>
+              <span id="acValue">—</span>
+            </div>
+          </div>
+
+          <div class="monitor-en">
+            <span class="badge badge-en">en</span>
+            <span id="enValue">—</span>
+          </div>
+        </div>
+      </div>
+
+      {# JS del monitor #}
+      <script src="{% static 'core/js/monitor.page.js' %}"></script>
+    </section>
+  </main>
+
+  <script type="module" src="{% static 'core/js/script.js' %}?v={{ timestamp|default:'' }}"></script>
+</body>
+</html>
